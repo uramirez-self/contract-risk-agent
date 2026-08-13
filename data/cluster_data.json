@@ -1,0 +1,335 @@
+{
+  "environments": {
+    "dev": {
+      "cluster_info": {
+        "cluster_name": "gke-us-central1-dev",
+        "environment_label": "Development",
+        "provider": "Google Cloud Platform (GKE)",
+        "region": "us-central1",
+        "current_monthly_spend": 1920.00,
+        "efficiency_score": 25,
+        "logging_cost_per_gb": 0.50
+      },
+      "workloads": [
+        {
+          "id": "dev-checkout-test",
+          "name": "checkout-api-dev",
+          "namespace": "dev-checkout",
+          "replicas": 4,
+          "status": "Running",
+          "requests": { "cpu_cores": 4.0, "memory_gb": 8.0 },
+          "limits": { "cpu_cores": 8.0, "memory_gb": 16.0 },
+          "actual_usage_p95": { "cpu_cores": 0.08, "memory_gb": 0.3 },
+          "logging": {
+            "daily_volume_gb": 14.2,
+            "log_level_distribution": { "DEBUG": 92, "INFO": 5, "WARN": 2, "ERROR": 1 },
+            "noise_pattern": "Dev debug trace logging enabled with full request/response body dumps."
+          },
+          "network": { "requests_per_min": 85 },
+          "tags": ["overprovisioned_cpu", "verbose_logging"],
+          "recommended_actions": [
+            {
+              "agent": "Logging Agent",
+              "action_type": "adjust_log_level",
+              "description": "Set LOG_LEVEL=INFO to eliminate 92% DEBUG log floods in dev.",
+              "monthly_savings": 195.00
+            },
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Rightsize from 4.0 vCPU / 8 GB to 0.3 vCPU / 0.8 GB in dev.",
+              "monthly_savings": 280.00
+            }
+          ]
+        },
+        {
+          "id": "dev-mock-payment",
+          "name": "payment-sandbox",
+          "namespace": "dev-payments",
+          "replicas": 3,
+          "status": "Running",
+          "requests": { "cpu_cores": 6.0, "memory_gb": 12.0 },
+          "limits": { "cpu_cores": 8.0, "memory_gb": 16.0 },
+          "actual_usage_p95": { "cpu_cores": 0.02, "memory_gb": 0.15 },
+          "logging": {
+            "daily_volume_gb": 1.5,
+            "log_level_distribution": { "DEBUG": 40, "INFO": 50, "WARN": 10, "ERROR": 0 },
+            "noise_pattern": "Sandbox heartbeat logs."
+          },
+          "network": { "requests_per_min": 0 },
+          "tags": ["zombie_workload", "overprovisioned_cpu"],
+          "recommended_actions": [
+            {
+              "agent": "Remediation Agent",
+              "action_type": "scale_to_zero",
+              "description": "Dev payment sandbox has 0 active requests. Scale replicas to 0 when idle.",
+              "monthly_savings": 380.00
+            }
+          ]
+        },
+        {
+          "id": "dev-feature-flag-service",
+          "name": "feature-flags-dev",
+          "namespace": "dev-common",
+          "replicas": 2,
+          "status": "Running",
+          "requests": { "cpu_cores": 2.0, "memory_gb": 4.0 },
+          "limits": { "cpu_cores": 4.0, "memory_gb": 8.0 },
+          "actual_usage_p95": { "cpu_cores": 0.05, "memory_gb": 0.2 },
+          "logging": {
+            "daily_volume_gb": 8.5,
+            "log_level_distribution": { "DEBUG": 88, "INFO": 10, "WARN": 2, "ERROR": 0 },
+            "noise_pattern": "Polling configuration updates every 500ms."
+          },
+          "network": { "requests_per_min": 120 },
+          "tags": ["verbose_logging"],
+          "recommended_actions": [
+            {
+              "agent": "Logging Agent",
+              "action_type": "mask_and_filter_logs",
+              "description": "Filter 500ms config poll stdout spam.",
+              "monthly_savings": 115.00
+            }
+          ]
+        }
+      ]
+    },
+    "qa": {
+      "cluster_info": {
+        "cluster_name": "gke-us-east1-qa",
+        "environment_label": "QA & Staging",
+        "provider": "Google Cloud Platform (GKE)",
+        "region": "us-east1",
+        "current_monthly_spend": 3450.00,
+        "efficiency_score": 41,
+        "logging_cost_per_gb": 0.50
+      },
+      "workloads": [
+        {
+          "id": "qa-analytics-worker",
+          "name": "analytics-worker-qa",
+          "namespace": "qa-analytics",
+          "replicas": 5,
+          "status": "Running",
+          "requests": { "cpu_cores": 16.0, "memory_gb": 32.0 },
+          "limits": { "cpu_cores": 24.0, "memory_gb": 48.0 },
+          "actual_usage_p95": { "cpu_cores": 0.01, "memory_gb": 0.1 },
+          "logging": {
+            "daily_volume_gb": 0.2,
+            "log_level_distribution": { "DEBUG": 0, "INFO": 100, "WARN": 0, "ERROR": 0 },
+            "noise_pattern": "Idle staging worker polling queues."
+          },
+          "network": { "requests_per_min": 0 },
+          "tags": ["zombie_workload", "severe_overprovisioning"],
+          "recommended_actions": [
+            {
+              "agent": "Remediation Agent",
+              "action_type": "scale_to_zero_or_delete",
+              "description": "QA Analytics worker abandoned with 0 traffic for 30 days. Scale to 0.",
+              "monthly_savings": 840.00
+            },
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Downsize requests from 16 CPU / 32 GB to 0.5 CPU / 1 GB per replica.",
+              "monthly_savings": 650.00
+            }
+          ]
+        },
+        {
+          "id": "qa-integration-test-suite",
+          "name": "load-test-runner",
+          "namespace": "qa-testing",
+          "replicas": 6,
+          "status": "Running",
+          "requests": { "cpu_cores": 8.0, "memory_gb": 16.0 },
+          "limits": { "cpu_cores": 12.0, "memory_gb": 24.0 },
+          "actual_usage_p95": { "cpu_cores": 0.12, "memory_gb": 0.5 },
+          "logging": {
+            "daily_volume_gb": 25.0,
+            "log_level_distribution": { "DEBUG": 75, "INFO": 20, "WARN": 5, "ERROR": 0 },
+            "noise_pattern": "Automated Cypress/Playwright integration run log dumps."
+          },
+          "network": { "requests_per_min": 450 },
+          "tags": ["batch_idle_replicas", "verbose_logging"],
+          "recommended_actions": [
+            {
+              "agent": "Remediation Agent",
+              "action_type": "enable_hpa",
+              "description": "Migrate load-test runner from static 6 replicas to HPA (scale to 0 between CI runs).",
+              "monthly_savings": 520.00
+            },
+            {
+              "agent": "Logging Agent",
+              "action_type": "adjust_log_level",
+              "description": "Truncate Playwright browser console logs in Cloud Logging.",
+              "monthly_savings": 280.00
+            }
+          ]
+        },
+        {
+          "id": "qa-order-service",
+          "name": "order-service-qa",
+          "namespace": "qa-checkout",
+          "replicas": 3,
+          "status": "Running",
+          "requests": { "cpu_cores": 4.0, "memory_gb": 8.0 },
+          "limits": { "cpu_cores": 6.0, "memory_gb": 12.0 },
+          "actual_usage_p95": { "cpu_cores": 0.15, "memory_gb": 0.6 },
+          "logging": {
+            "daily_volume_gb": 6.8,
+            "log_level_distribution": { "DEBUG": 50, "INFO": 40, "WARN": 10, "ERROR": 0 },
+            "noise_pattern": "Mock database transaction queries."
+          },
+          "network": { "requests_per_min": 210 },
+          "tags": ["overprovisioned_cpu"],
+          "recommended_actions": [
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Rightsize CPU from 4 CPU to 0.5 CPU per replica in QA.",
+              "monthly_savings": 190.00
+            }
+          ]
+        }
+      ]
+    },
+    "prod": {
+      "cluster_info": {
+        "cluster_name": "gke-us-central1-prod-01",
+        "environment_label": "Production",
+        "provider": "Google Cloud Platform (GKE)",
+        "region": "us-central1",
+        "current_monthly_spend": 7820.00,
+        "efficiency_score": 34,
+        "logging_cost_per_gb": 0.50
+      },
+      "workloads": [
+        {
+          "id": "prod-checkout-service",
+          "name": "checkout-service",
+          "namespace": "prod-checkout",
+          "replicas": 8,
+          "status": "Running",
+          "requests": { "cpu_cores": 8.0, "memory_gb": 16.0 },
+          "limits": { "cpu_cores": 12.0, "memory_gb": 24.0 },
+          "actual_usage_p95": { "cpu_cores": 0.35, "memory_gb": 0.85 },
+          "logging": {
+            "daily_volume_gb": 28.5,
+            "log_level_distribution": { "DEBUG": 80, "INFO": 15, "WARN": 4, "ERROR": 1 },
+            "noise_pattern": "Verbose SQL query parameter debug dumps in production."
+          },
+          "network": { "requests_per_min": 4200 },
+          "tags": ["overprovisioned_cpu", "overprovisioned_mem", "verbose_logging"],
+          "recommended_actions": [
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Downsize requests from 8 CPU / 16 GB to 0.8 CPU / 2.0 GB per replica.",
+              "monthly_savings": 1540.00
+            },
+            {
+              "agent": "Logging Agent",
+              "action_type": "adjust_log_level",
+              "description": "Set LOG_LEVEL=INFO to filter 80% DEBUG log volume in prod-checkout.",
+              "monthly_savings": 342.00
+            }
+          ]
+        },
+        {
+          "id": "prod-auth-gateway",
+          "name": "auth-gateway",
+          "namespace": "prod-checkout",
+          "replicas": 6,
+          "status": "Running",
+          "requests": { "cpu_cores": 6.0, "memory_gb": 12.0 },
+          "limits": { "cpu_cores": 8.0, "memory_gb": 16.0 },
+          "actual_usage_p95": { "cpu_cores": 0.55, "memory_gb": 1.2 },
+          "logging": {
+            "daily_volume_gb": 52.0,
+            "log_level_distribution": { "DEBUG": 88, "INFO": 8, "WARN": 2, "ERROR": 2 },
+            "noise_pattern": "JWT token verification payload dumped on every HTTP call."
+          },
+          "network": { "requests_per_min": 9500 },
+          "tags": ["verbose_logging", "overprovisioned_cpu"],
+          "recommended_actions": [
+            {
+              "agent": "Logging Agent",
+              "action_type": "mask_and_filter_logs",
+              "description": "Apply Cloud Logging exclusion filter for healthchecks and payload tracing.",
+              "monthly_savings": 686.00
+            },
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Reduce requests from 6 CPU / 12 GB to 1.0 CPU / 2.5 GB per replica.",
+              "monthly_savings": 610.00
+            }
+          ]
+        },
+        {
+          "id": "prod-payment-processor",
+          "name": "payment-processor",
+          "namespace": "prod-payments",
+          "replicas": 6,
+          "status": "Running",
+          "requests": { "cpu_cores": 12.0, "memory_gb": 24.0 },
+          "limits": { "cpu_cores": 16.0, "memory_gb": 32.0 },
+          "actual_usage_p95": { "cpu_cores": 1.2, "memory_gb": 2.8 },
+          "logging": {
+            "daily_volume_gb": 32.0,
+            "log_level_distribution": { "DEBUG": 5, "INFO": 15, "WARN": 20, "ERROR": 60 },
+            "noise_pattern": "Looping NullPointerExceptions in payment gateway retries (22,000 errors/min)."
+          },
+          "network": { "requests_per_min": 3800 },
+          "tags": ["error_loop_spam", "overprovisioned_mem"],
+          "recommended_actions": [
+            {
+              "agent": "Logging Agent",
+              "action_type": "circuit_breaker_error_rate",
+              "description": "Deduplicate NullPointer retry stack traces and rate-limit error log exporter.",
+              "monthly_savings": 384.00
+            },
+            {
+              "agent": "Utilization Agent",
+              "action_type": "rightsize_resources",
+              "description": "Rightsize CPU from 12 CPU to 2.5 CPU and RAM from 24 GB to 5 GB per replica.",
+              "monthly_savings": 1180.00
+            }
+          ]
+        },
+        {
+          "id": "prod-recommendation-engine",
+          "name": "recommendation-engine",
+          "namespace": "prod-checkout",
+          "replicas": 4,
+          "status": "Degraded (OOMKilled Loop)",
+          "requests": { "cpu_cores": 0.2, "memory_gb": 0.25 },
+          "limits": { "cpu_cores": 0.5, "memory_gb": 0.5 },
+          "actual_usage_p95": { "cpu_cores": 1.8, "memory_gb": 2.4 },
+          "logging": {
+            "daily_volume_gb": 8.4,
+            "log_level_distribution": { "DEBUG": 5, "INFO": 15, "WARN": 20, "ERROR": 60 },
+            "noise_pattern": "java.lang.OutOfMemoryError: Java heap space crash loops."
+          },
+          "network": { "requests_per_min": 1400 },
+          "tags": ["underprovisioned_mem", "oom_killed"],
+          "recommended_actions": [
+            {
+              "agent": "Utilization Agent",
+              "action_type": "increase_memory_limit",
+              "description": "Increase memory request to 3.0 GB to eliminate OOMKilled crash loops.",
+              "monthly_savings": -30.00
+            },
+            {
+              "agent": "Remediation Agent",
+              "action_type": "enable_vpa",
+              "description": "Deploy Vertical Pod Autoscaler (VPA) in Auto mode for dynamic ML heap tuning.",
+              "monthly_savings": 150.00
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
