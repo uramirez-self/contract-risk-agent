@@ -30,16 +30,21 @@ function switchMode(mode) {
   activeMode = mode;
   document.getElementById('btn-mode-b2b').classList.toggle('active', mode === 'b2b');
   document.getElementById('btn-mode-eula').classList.toggle('active', mode === 'eula');
+  document.getElementById('btn-mode-sow').classList.toggle('active', mode === 'sow');
 
   const subtitleText = document.getElementById('mode-subtitle-text');
   if (mode === 'b2b') {
     subtitleText.innerHTML = `<i class="fa-solid fa-building g-blue"></i> <strong>B2B Mode:</strong> Find risks and negotiate commercially reasonable middle ground.`;
     document.getElementById('tab-mode-feature-title').innerText = 'Win-Win Negotiation Engine';
     document.getElementById('footer-tagline').innerText = 'Find the agreement both sides can live with.';
-  } else {
+  } else if (mode === 'eula') {
     subtitleText.innerHTML = `<i class="fa-solid fa-user-shield g-green"></i> <strong>EULA Mode:</strong> Understand what you're agreeing to and challenge provisions that undermine choice, transparency, privacy, property, or autonomy.`;
     document.getElementById('tab-mode-feature-title').innerText = 'Rights & Principles Lens';
     document.getElementById('footer-tagline').innerText = 'Understand what you\'re giving up before you agree.';
+  } else {
+    subtitleText.innerHTML = `<i class="fa-solid fa-compass-drafting g-purple"></i> <strong>SOW Mode:</strong> Translate Statement of Work (SOW) commitments into an actionable engineering delivery roadmap, milestone checklist, tech stack risks, and acceptance criteria.`;
+    document.getElementById('tab-mode-feature-title').innerText = 'SOW Engineering Delivery Roadmap';
+    document.getElementById('footer-tagline').innerText = 'Know exactly what needs to be built, tested, and delivered for project success.';
   }
 
   fetchContractData(mode);
@@ -103,7 +108,7 @@ function renderHealthScore() {
     <span class="badge badge-info">🔵 ${health.counsel_questions_count} Counsel Questions</span>
   `;
 
-  // Leverage vs Impact Score Card
+  // Leverage vs Impact vs Engineering Score Card
   const box = document.getElementById('score-meta-box');
   if (activeMode === 'b2b') {
     const neg = currentContract.negotiation_score;
@@ -116,12 +121,23 @@ function renderHealthScore() {
       </div>
       <div class="sub-text"><strong>Walk-Away Note:</strong> ${neg.walkaway_consideration}</div>
     `;
-  } else {
+  } else if (activeMode === 'eula') {
     const imp = currentContract.user_impact_score;
     box.innerHTML = `
       <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-user-shield g-green"></i> ${imp.impact_level}</div>
       <div style="margin-bottom:4px;">Transparency: <strong>${imp.transparency}</strong> | Direct Negotiation: <strong>${imp.ability_to_negotiate}</strong></div>
       <div class="sub-text"><strong>Recommended Action:</strong> ${imp.recommended_action}</div>
+    `;
+  } else {
+    const eng = currentContract.engineering_score;
+    box.innerHTML = `
+      <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-compass-drafting g-purple"></i> ${eng.readiness_level}</div>
+      <div style="display:flex; gap:12px; margin-bottom:6px;">
+        <span>Milestones: <strong>${eng.milestone_count}</strong></span>
+        <span>Deliverables: <strong>${eng.deliverable_count}</strong></span>
+        <span>Acceptance Criteria: <strong>${eng.acceptance_criteria_count}</strong></span>
+      </div>
+      <div class="sub-text"><strong>Scope Creep Risk:</strong> ${eng.scope_creep_risk}</div>
     `;
   }
 }
@@ -229,7 +245,7 @@ function scrollToClause(clauseId) {
   }
 }
 
-// 6. Render Mode-Specific Feature (Win-Win Negotiation OR Rights Lens)
+// 6. Render Mode-Specific Feature (Win-Win Negotiation OR Rights Lens OR SOW Engineering Roadmap)
 function renderModeSpecificFeature() {
   const container = document.getElementById('mode-feature-container');
 
@@ -254,7 +270,7 @@ function renderModeSpecificFeature() {
         </div>
       </div>
     `).join('');
-  } else {
+  } else if (activeMode === 'eula') {
     const clauses = currentContract.clauses.filter(c => c.principles_lens);
     container.innerHTML = clauses.map(c => `
       <div class="feature-card" style="margin-bottom:16px; border-left: 4px solid #a855f7;">
@@ -276,7 +292,111 @@ function renderModeSpecificFeature() {
         </div>
       </div>
     `).join('');
+  } else {
+    // SOW Engineering Delivery Roadmap Mode
+    const milestones = currentContract.milestones || [];
+    container.innerHTML = `
+      <!-- SOW Copilot Q&A Box -->
+      <div class="feature-card" style="margin-bottom:20px; background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%); border: 1px solid #d8b4fe;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3><i class="fa-solid fa-robot g-purple"></i> Ask Gemini SOW Engineering Copilot</h3>
+          <span class="badge badge-info">Interactive Query Tool</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="sow-query-input" placeholder="Ask about SLAs, penalties, security requirements, or scope limits (e.g. 'What is the penalty for missing cutover SLA?')..." style="flex:1; padding:10px 14px; border:1px solid var(--g-gray-300); border-radius:8px; font-size:13px;" onkeydown="if(event.key==='Enter') querySowCopilot()">
+          <button class="btn btn-primary" onclick="querySowCopilot()"><i class="fa-solid fa-magnifying-glass"></i> Ask Copilot</button>
+        </div>
+        <div id="sow-query-response" class="hidden" style="margin-top:12px; background:#ffffff; padding:12px; border-radius:8px; border:1px solid #e9d5ff; font-size:13px;">
+          <!-- Response -->
+        </div>
+      </div>
+
+      <!-- SOW Milestones & Deliverables -->
+      <div style="margin-bottom:12px; font-weight:700; font-size:16px;">
+        <i class="fa-solid fa-timeline g-blue"></i> Technical Milestone Delivery Roadmap (Phases 1-4)
+      </div>
+
+      ${milestones.map(m => `
+        <div class="feature-card" style="margin-bottom:16px; border-left: 4px solid ${m.risk_level === 'High' ? 'var(--g-red)' : m.risk_level === 'Medium' ? 'var(--g-yellow)' : 'var(--g-green)'};">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <span class="section-kicker">${m.phase.toUpperCase()} · ${m.payout}</span>
+              <h3>${m.title}</h3>
+              <p class="sub-text">Assigned Tech Lead: <strong>${m.tech_lead}</strong></p>
+            </div>
+            <span class="badge ${m.risk_level === 'High' ? 'badge-danger' : m.risk_level === 'Medium' ? 'badge-warning' : 'badge-success'}">
+              Technical Risk: ${m.risk_level}
+            </span>
+          </div>
+
+          <!-- Deliverables List -->
+          <div style="margin:12px 0;">
+            <strong style="font-size:12px; color:var(--g-gray-800);">Engineered Deliverables:</strong>
+            <ul style="padding-left:20px; font-size:13px; margin-top:4px;">
+              ${m.deliverables.map(d => `<li style="margin-bottom:3px;">${d}</li>`).join('')}
+            </ul>
+          </div>
+
+          <!-- Interactive Acceptance Criteria Checklist -->
+          <div style="background-color: var(--g-gray-50); padding:12px; border-radius:8px; margin-top:8px;">
+            <strong style="font-size:12px; color:var(--g-gray-800);"><i class="fa-solid fa-list-check g-green"></i> Acceptance Criteria & Testing Verification:</strong>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+              ${m.acceptance_criteria.map(ac => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:6px 10px; border-radius:6px; border:1px solid var(--g-gray-200); font-size:12px;">
+                  <span>${ac.text}</span>
+                  <button class="btn btn-sm ${ac.status === 'Passed' ? 'btn-demo' : ac.status === 'In Testing' ? 'btn-secondary' : 'btn-outline'}" onclick="toggleAcceptanceStatus('${m.id}', '${ac.id}')">
+                    ${ac.status}
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    `;
   }
+}
+
+async function querySowCopilot() {
+  const input = document.getElementById('sow-query-input');
+  const q = input.value.trim();
+  if (!q) return;
+
+  try {
+    const res = await fetch('/api/sow-ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q })
+    });
+    const data = await res.json();
+
+    const box = document.getElementById('sow-query-response');
+    box.classList.remove('hidden');
+    box.innerHTML = `
+      <strong style="color:var(--g-blue);"><i class="fa-solid fa-sparkles"></i> Gemini SOW Copilot Answer:</strong>
+      <p style="margin-top:4px;">${data.answer}</p>
+      <div style="margin-top:6px; font-size:11px; color:var(--g-gray-700);">
+        <strong>Grounded SOW Citations:</strong> ${data.sources.join(' · ')}
+      </div>
+    `;
+  } catch (err) {
+    showToast('Failed to query SOW Copilot', 'error');
+  }
+}
+
+function toggleAcceptanceStatus(milestoneId, criteriaId) {
+  const milestone = currentContract.milestones.find(m => m.id === milestoneId);
+  if (!milestone) return;
+
+  const ac = milestone.acceptance_criteria.find(a => a.id === criteriaId);
+  if (!ac) return;
+
+  if (ac.status === 'Pending') ac.status = 'In Testing';
+  else if (ac.status === 'In Testing') ac.status = 'Passed';
+  else ac.status = 'Pending';
+
+  renderModeSpecificFeature();
+  showToast(`Updated '${ac.text.substring(0, 30)}...' to ${ac.status}`, 'info');
 }
 
 // 7. Full Contract Text Viewer

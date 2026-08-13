@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from data.contract_data import (
     get_b2b_contract_data,
     get_eula_contract_data,
+    get_sow_contract_data,
     evaluate_custom_contract_text,
     simulate_counterparty_turn
 )
@@ -21,7 +22,8 @@ app = FastAPI(title="Contract Risk Agent")
 # Store session memory
 active_contracts = {
     "b2b": get_b2b_contract_data(),
-    "eula": get_eula_contract_data()
+    "eula": get_eula_contract_data(),
+    "sow": get_sow_contract_data()
 }
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -39,8 +41,33 @@ def read_root():
 def get_contract(contract_type: str):
     ctype = contract_type.lower()
     if ctype not in active_contracts:
-        raise HTTPException(status_code=404, detail="Contract type not found. Use 'b2b' or 'eula'.")
+        raise HTTPException(status_code=404, detail="Contract type not found. Use 'b2b', 'eula', or 'sow'.")
     return active_contracts[ctype]
+
+@app.post("/api/sow-ask")
+def ask_sow(payload: dict = Body(...)):
+    question = payload.get("question", "").lower()
+    contract = active_contracts.get("sow", get_sow_contract_data())
+    
+    if "penalty" in question or "late" in question or "delay" in question:
+        answer = "Under SOW Section 4.2, missing the production cutover 99.99% availability SLA entitles Customer to a 20% milestone payment penalty deduction ($14,000). However, the penalty applies only if Customer delivers prerequisite Multi-AZ cloud servers."
+        sources = ["SOW Section 4.2 (Availability & SLAs)", "Phase 4 Cutover Terms"]
+    elif "sla" in question or "performance" in question or "latency" in question:
+        answer = "SOW Section 2.1 requires <200ms ingestion latency at 50,000 req/sec during Phase 1 load testing, and a P99 query response time under 1.5 seconds across 10TB dataset in Phase 2."
+        sources = ["Phase 1 Acceptance Criteria ac-101", "Phase 2 Acceptance Criteria ac-202"]
+    elif "security" in question or "soc2" in question or "audit" in question:
+        answer = "Phase 3 requires KMS key rotation, RBAC data masking, and a third-party penetration test completed with zero Critical or High findings prior to Phase 4 UAT."
+        sources = ["SOW Section 5.1 Security Requirements", "Milestone 3 (Phase 3)"]
+    else:
+        answer = f"According to the SOW contract, engineering scope includes 4 fixed milestones totaling $280,000 over 16 weeks. Key technical commitments cover Terraform IaC, Kafka ingestion, Spark streaming, KMS encryption, and 14 days of 24/7 post-cutover hypercare."
+        sources = ["SOW Master Scope Summary", "Milestones 1-4 Schedule"]
+        
+    return {
+        "success": True,
+        "question": payload.get("question"),
+        "answer": answer,
+        "sources": sources
+    }
 
 @app.post("/api/analyze")
 def analyze_contract(payload: dict = Body(...)):

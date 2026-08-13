@@ -180,6 +180,211 @@ def get_b2b_contract_data():
         ]
     }
 
+def get_sow_contract_data():
+    return {
+        "id": "sow-eng-001",
+        "mode": "sow",
+        "title": "Statement of Work (SOW): Enterprise Analytics Infrastructure Migration",
+        "subtitle": "Translate SOW contract commitments into an engineering delivery roadmap, technical risk breakdown, and acceptance criteria.",
+        "metadata": {
+            "type": "Statement of Work (Engineering SOW)",
+            "parties": "CloudPulse Systems (Delivery Vendor) & Acme Enterprises (Customer)",
+            "jurisdiction": "State of California, USA",
+            "length": "18 Pages · 8 Scope Sections",
+            "date": "August 2026",
+            "annual_value": "$280,000 Total Fixed Fee"
+        },
+        "health": {
+            "score": 76,
+            "status_label": "76 / 100 — Deliverable Clarity High · 2 SLA Scope Risks",
+            "reasonable_count": 16,
+            "discuss_count": 5,
+            "high_risk_count": 2,
+            "counsel_questions_count": 2
+        },
+        "engineering_score": {
+            "readiness_level": "Engineering Ready (Phase 1 Cleared)",
+            "milestone_count": 4,
+            "deliverable_count": 12,
+            "acceptance_criteria_count": 8,
+            "scope_creep_risk": "Medium Risk on Ad-Hoc Data Schema Requests"
+        },
+        "agent_activity": [
+            {"step": 1, "text": "Parsing Statement of Work (SOW) deliverables & technical scope", "done": True},
+            {"step": 2, "text": "Mapping milestone payment schedule to technical delivery dependencies", "done": True},
+            {"step": 3, "text": "Extracting performance SLAs, latency metrics & uptime requirements", "done": True},
+            {"step": 4, "text": "Detecting implicit architectural dependencies & technical debt risks", "done": True},
+            {"step": 5, "text": "Generating Jira-ready engineering user stories & technical acceptance criteria", "done": True},
+            {"step": 6, "text": "Evaluating scope creep triggers & uncompensated change request risks", "done": True}
+        ],
+        "top_issues": [
+            {"id": "sow-cl-1", "title": "1. Ambiguous 99.99% Cutover SLA Without Redundant Infrastructure", "severity": "High"},
+            {"id": "sow-cl-2", "title": "2. Uncapped Ad-Hoc Log Schema Modification Requests", "severity": "High"},
+            {"id": "sow-cl-3", "title": "3. Strict 14-Day Hypercare P0 Incident Penalty Window", "severity": "Medium"}
+        ],
+        "milestones": [
+            {
+                "id": "m-1",
+                "phase": "Phase 1: Weeks 1-4",
+                "title": "Architecture & Ingestion Pipeline Setup",
+                "payout": "$70,000 (25%)",
+                "tech_lead": "Alex Rivera (Senior Backend/Data Lead)",
+                "risk_level": "Medium",
+                "status": "In Progress",
+                "deliverables": [
+                    "Infrastructure-as-Code (Terraform) scripts for AWS/GCP data environment",
+                    "Kafka streaming ingestion connector for legacy Oracle database logs",
+                    "Automated CI/CD build & test pipeline with GitHub Actions"
+                ],
+                "acceptance_criteria": [
+                    {"id": "ac-101", "text": "Performance load test achieves <200ms ingestion latency at 50,000 req/sec", "status": "Passed"},
+                    {"id": "ac-102", "text": "Terraform IaC deployment passes automated security static analysis scan", "status": "In Testing"}
+                ]
+            },
+            {
+                "id": "m-2",
+                "phase": "Phase 2: Weeks 5-8",
+                "title": "Real-time Analytics Data Processing & AI Indexing",
+                "payout": "$80,000 (28.5%)",
+                "tech_lead": "Priya Sharma (AI/Data Engineer Lead)",
+                "risk_level": "High",
+                "status": "Pending",
+                "deliverables": [
+                    "Apache Spark streaming processing job for real-time log parsing",
+                    "BigQuery real-time data sink with partitioned indexing",
+                    "Vector embedding generation pipeline for unstructured log entries"
+                ],
+                "acceptance_criteria": [
+                    {"id": "ac-201", "text": "Zero data loss during simulated node failure failover test", "status": "Pending"},
+                    {"id": "ac-202", "text": "P99 analytical query response time under 1.5 seconds across 10TB dataset", "status": "Pending"}
+                ]
+            },
+            {
+                "id": "m-3",
+                "phase": "Phase 3: Weeks 9-12",
+                "title": "Security, SOC2 Compliance & Access Controls",
+                "payout": "$70,000 (25%)",
+                "tech_lead": "Marcus Vance (Security Lead)",
+                "risk_level": "High",
+                "status": "Pending",
+                "deliverables": [
+                    "KMS automated key rotation & data-at-rest encryption",
+                    "Role-Based Access Control (RBAC) with column-level data masking",
+                    "Real-time audit log exporter formatted for Customer SIEM (Splunk)"
+                ],
+                "acceptance_criteria": [
+                    {"id": "ac-301", "text": "Third-party penetration test completed with zero Critical or High findings", "status": "Pending"},
+                    {"id": "ac-302", "text": "SIEM audit log exporter passes 24-hour continuous log streaming test", "status": "Pending"}
+                ]
+            },
+            {
+                "id": "m-4",
+                "phase": "Phase 4: Weeks 13-16",
+                "title": "Production Cutover, UAT & 14-Day Hypercare",
+                "payout": "$60,000 (21.5%)",
+                "tech_lead": "Sarah Chen (DevOps / SRE Lead)",
+                "risk_level": "Low",
+                "status": "Pending",
+                "deliverables": [
+                    "Blue/Green zero-downtime production cutover execution",
+                    "24/7 post-cutover hypercare support monitoring for 14 consecutive days",
+                    "Complete technical architecture runbook and operator handoff docs"
+                ],
+                "acceptance_criteria": [
+                    {"id": "ac-401", "text": "Customer VP Tech written UAT acceptance signoff", "status": "Pending"},
+                    {"id": "ac-402", "text": "Zero P0 or P1 unhandled production incidents during 14-day hypercare window", "status": "Pending"}
+                ]
+            }
+        ],
+        "clauses": [
+            {
+                "id": "sow-cl-1",
+                "title": "Ambiguous 99.99% Cutover SLA Without Redundant Infrastructure",
+                "category": "Technical SLA & Performance",
+                "risk_level": "High",
+                "risk_score": 88,
+                "confidence": "High",
+                "allocation": {"you": 80, "counterparty": 20},
+                "section_ref": "SOW Section 4.2 (Availability & SLAs)",
+                "contract_quote": "Delivery Vendor guarantees 99.99% continuous system availability during the production cutover window. Failure to meet this SLA shall entitle Customer to a 20% milestone payment penalty deduction.",
+                "plain_english": "The contract penalizes engineering $14,000 if uptime drops below 99.99% during cutover, but Acme's current legacy infrastructure lacks dual-region failover hardware.",
+                "why_it_matters": "Engineers cannot guarantee four-nines uptime during live cutover if the customer's destination infrastructure lacks redundant failover clusters.",
+                "tech_risk_analysis": {
+                    "architecture_impact": "High risk of SLA breach due to single-point-of-failure hardware in Customer target environment.",
+                    "mitigation": "Clarify that 99.99% SLA applies only if Customer provisions dual-region redundant cluster hardware per Section 2.1 specs."
+                },
+                "user_stories": [
+                    {"id": "JIRA-201", "title": "Configure Dual-Region AWS Multi-AZ Failover Cluster", "points": "8 Points", "role": "DevOps Lead"},
+                    {"id": "JIRA-202", "title": "Implement Synthetic Uptime Health Check Probe for Cutover Window", "points": "5 Points", "role": "Backend Engineer"}
+                ],
+                "middle_ground": {
+                    "your_concern": "Being penalized for infrastructure outages caused by Customer's legacy server limitations.",
+                    "their_concern": "Ensuring their core business operations remain online during production cutover.",
+                    "shared_objective": "Execute a seamless production cutover with clear infrastructure prerequisites.",
+                    "compromise_proposal": "Condition the 99.99% cutover SLA on Customer delivering prerequisite Multi-AZ cloud infrastructure 7 days prior to cutover.",
+                    "suggested_response": "“We fully support the 99.99% cutover SLA requirement. To achieve four-nines availability, Section 4.2 should explicitly note that Customer must provision the specified dual-region Multi-AZ environment at least 7 days prior to cutover.”"
+                },
+                "diff": {
+                    "original": "Delivery Vendor guarantees 99.99% continuous system availability during the production cutover window...",
+                    "proposed": "Delivery Vendor guarantees 99.99% system availability during cutover, contingent upon Customer delivering the fully configured Multi-AZ infrastructure specified in Section 2.1 at least seven (7) days prior to cutover.",
+                    "explanation": "Adds prerequisite infrastructure delivery condition to protect engineering from unmitigated SLA penalties."
+                }
+            },
+            {
+                "id": "sow-cl-2",
+                "title": "Uncapped Ad-Hoc Log Schema Modification Requests",
+                "category": "Scope Creep & Change Management",
+                "risk_level": "High",
+                "risk_score": 82,
+                "confidence": "High",
+                "allocation": {"you": 75, "counterparty": 25},
+                "section_ref": "SOW Section 3.1 (Scope of Data Sources)",
+                "contract_quote": "Delivery Vendor shall ingest and index all log schemas provided by Customer, including any ad-hoc schema modifications or additional data fields requested during Phase 2 or Phase 3.",
+                "plain_english": "Acme can continuously add new unformatted log fields during development, forcing engineering to rewrite data ingestion parsers without extra time or budget.",
+                "why_it_matters": "Unbounded schema changes cause severe pipeline rework and scope creep that delays Phase 2 Spark streaming milestones.",
+                "tech_risk_analysis": {
+                    "architecture_impact": "Requires dynamic schema evolution parser or strict Change Order process for breaking schema changes.",
+                    "mitigation": "Freeze log schema specifications at the conclusion of Phase 1; handle subsequent field additions via standard Change Order."
+                },
+                "user_stories": [
+                    {"id": "JIRA-301", "title": "Build Dynamic JSON Log Schema Parser with Fallback DLQ", "points": "13 Points", "role": "Data Engineer"}
+                ],
+                "middle_ground": {
+                    "your_concern": "Continuous moving goalposts for log schema formats delaying sprint milestones.",
+                    "their_concern": "Ensuring new operational fields can be ingested as their internal systems evolve.",
+                    "shared_objective": "Lock core schema requirements early while establishing a light Change Order path for field additions.",
+                    "compromise_proposal": "Lock core log schema at Phase 1 signoff. Allow up to 3 minor field additions per phase; larger schema additions require a 3-day sprint impact review.",
+                    "suggested_response": "“To keep Phase 2 Spark development on schedule, we suggest freezing the baseline log schema at the end of Phase 1. Additional fields can be added via standard change request.”"
+                },
+                "diff": {
+                    "original": "including any ad-hoc schema modifications or additional data fields requested during Phase 2 or Phase 3.",
+                    "proposed": "based on the baseline log schema frozen at Phase 1 signoff. Subsequent material schema modifications shall be managed via standard written Change Order.",
+                    "explanation": "Establishes schema baseline freeze and protects sprint capacity."
+                }
+            }
+        ]
+    }
+
+def evaluate_custom_contract_text(text, mode="b2b"):
+    """
+    Simulates Gemini Contract Agent parsing uploaded or pasted contract text.
+    """
+    word_count = len(text.split())
+    
+    if mode == "sow" or "statement of work" in text.lower() or "deliverable" in text.lower():
+        data = get_sow_contract_data()
+        data["metadata"]["type"] = "Custom Uploaded Statement of Work (SOW)"
+        data["metadata"]["length"] = f"Pasted Text · {word_count} words"
+        return data
+    elif mode == "eula" or "end user" in text.lower() or "terms of service" in text.lower():
+        data = get_eula_contract_data()
+        data["metadata"]["type"] = "Custom Uploaded EULA / Terms of Service"
+        data["metadata"]["length"] = f"Pasted Text · {word_count} words"
+        return data
+    else:
+        data = get_b2b_contract_data()
+        data["metadata"]["type"] = "Custom Uploaded B2B Agreement"
+        data["metadata"]["length"] = f"Pasted Text · {word_count} words"
 def get_eula_contract_data():
     return {
         "id": "eula-consumer-001",
