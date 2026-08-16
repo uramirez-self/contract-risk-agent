@@ -3,13 +3,9 @@
    App: Contract Risk Agent
    ========================================================================== */
 
-let activeMode = 'b2b'; // 'b2b' or 'eula'
+let activeMode = 'b2b'; // 'b2b', 'eula', or 'sow'
 let currentContract = null;
 let currentTab = 'risks';
-let demoTourActive = false;
-let currentDemoStep = 1;
-const TOTAL_DEMO_STEPS = 11;
-
 let chatHistory = [];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchContractData(mode) {
   try {
     const res = await fetch(`/api/contract/${mode}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     currentContract = await res.json();
     renderAll();
   } catch (err) {
@@ -50,6 +47,23 @@ function switchMode(mode) {
   fetchContractData(mode);
 }
 
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-btn-risks').classList.toggle('active', tab === 'risks');
+  document.getElementById('tab-btn-feature').classList.toggle('active', tab === 'feature');
+  document.getElementById('tab-btn-challenge').classList.toggle('active', tab === 'challenge');
+  document.getElementById('tab-btn-text').classList.toggle('active', tab === 'text');
+
+  document.getElementById('tab-content-risks').style.display = tab === 'risks' ? 'block' : 'none';
+  document.getElementById('tab-content-feature').style.display = tab === 'feature' ? 'block' : 'none';
+  document.getElementById('tab-content-challenge').style.display = tab === 'challenge' ? 'block' : 'none';
+  document.getElementById('tab-content-text').style.display = tab === 'text' ? 'block' : 'none';
+
+  if (tab === 'challenge') {
+    loadChallengeNext();
+  }
+}
+
 // Master Render
 function renderAll() {
   if (!currentContract) return;
@@ -66,16 +80,17 @@ function renderAll() {
 
 // 1. Ingestion Metadata
 function renderContractMetadata() {
-  const meta = currentContract.metadata;
-  document.getElementById('contract-doc-title').innerText = currentContract.title;
+  const meta = currentContract.metadata || {};
+  document.getElementById('contract-doc-title').innerText = currentContract.title || 'Contract Document';
 
   const grid = document.getElementById('doc-meta-grid');
   grid.innerHTML = `
-    <span><i class="fa-solid fa-tag"></i> ${meta.type}</span>
-    <span><i class="fa-solid fa-building"></i> ${meta.parties}</span>
-    <span><i class="fa-solid fa-scale-balanced"></i> ${meta.jurisdiction}</span>
-    <span><i class="fa-solid fa-file-lines"></i> ${meta.length}</span>
-    <span><i class="fa-solid fa-calendar"></i> ${meta.date}</span>
+    <div class="doc-meta-item"><i class="fa-solid fa-tag g-blue"></i> <strong>Type:</strong> ${meta.type || 'N/A'}</div>
+    <div class="doc-meta-item"><i class="fa-solid fa-building g-purple"></i> <strong>Parties:</strong> ${meta.parties || 'N/A'}</div>
+    <div class="doc-meta-item"><i class="fa-solid fa-scale-balanced g-green"></i> <strong>Law:</strong> ${meta.jurisdiction || 'N/A'}</div>
+    <div class="doc-meta-item"><i class="fa-solid fa-file-lines g-yellow"></i> <strong>Length:</strong> ${meta.length || 'N/A'}</div>
+    <div class="doc-meta-item"><i class="fa-solid fa-calendar g-blue"></i> <strong>Date:</strong> ${meta.date || 'N/A'}</div>
+    <div class="doc-meta-item"><i class="fa-solid fa-dollar-sign g-green"></i> <strong>Value:</strong> ${meta.annual_value || 'N/A'}</div>
   `;
 }
 
@@ -93,51 +108,61 @@ function renderAgentActivity() {
 
 // 3. Health Score & Score Card
 function renderHealthScore() {
-  const health = currentContract.health;
+  const health = currentContract.health || { score: 60, status_label: '60/100', reasonable_count: 10, discuss_count: 5, high_risk_count: 2, counsel_questions_count: 1 };
   document.getElementById('health-score-num').innerText = health.score;
   document.getElementById('health-status-label').innerText = health.status_label;
 
   const circle = document.getElementById('health-circle');
-  circle.style.background = `conic-gradient(var(--g-green) 0% ${health.score}%, var(--g-gray-200) ${health.score}% 100%)`;
+  let color = 'var(--g-green)';
+  if (health.score < 50) color = 'var(--g-red)';
+  else if (health.score < 70) color = 'var(--g-yellow)';
+
+  circle.style.background = `conic-gradient(${color} 0% ${health.score}%, var(--g-gray-200) ${health.score}% 100%)`;
 
   const pills = document.getElementById('health-breakdown-pills');
   pills.innerHTML = `
     <span class="badge badge-success">🟢 ${health.reasonable_count} Reasonable</span>
     <span class="badge badge-warning">🟡 ${health.discuss_count} To Discuss</span>
     <span class="badge badge-danger">🔴 ${health.high_risk_count} High Risk</span>
-    <span class="badge badge-info">🔵 ${health.counsel_questions_count} Counsel Questions</span>
+    <span class="badge badge-info">🔵 ${health.counsel_questions_count} Counsel</span>
   `;
 
   // Leverage vs Impact vs Engineering Score Card
   const box = document.getElementById('score-meta-box');
   if (activeMode === 'b2b') {
-    const neg = currentContract.negotiation_score;
+    const neg = currentContract.negotiation_score || { position: 'Customer Position', leverage: 70, risk_score: 50, compromise_potential: 80, walkaway_consideration: 'N/A' };
     box.innerHTML = `
-      <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-handshake g-blue"></i> ${neg.position}</div>
-      <div style="display:flex; gap:12px; margin-bottom:6px;">
+      <div style="font-weight:700; margin-bottom:6px; color:var(--g-blue);"><i class="fa-solid fa-handshake"></i> ${neg.position}</div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
         <span>Leverage: <strong>${neg.leverage}%</strong></span>
-        <span>Risk Exposure: <strong>${neg.risk_score}%</strong></span>
+        <span>Exposure: <strong>${neg.risk_score}%</strong></span>
         <span>Compromise: <strong>${neg.compromise_potential}%</strong></span>
       </div>
-      <div class="sub-text"><strong>Walk-Away Note:</strong> ${neg.walkaway_consideration}</div>
+      <div style="font-size:12px; color:var(--g-gray-700); background:var(--g-gray-50); padding:8px; border-radius:var(--radius-sm);">
+        <strong>Walk-Away Note:</strong> ${neg.walkaway_consideration}
+      </div>
     `;
   } else if (activeMode === 'eula') {
-    const imp = currentContract.user_impact_score;
+    const imp = currentContract.user_impact_score || { impact_level: 'High Consumer Rights Impact', transparency: 'Standard Form', ability_to_negotiate: 'Adhesion Contract', recommended_action: 'Opt out of binding arbitration.' };
     box.innerHTML = `
-      <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-user-shield g-green"></i> ${imp.impact_level}</div>
-      <div style="margin-bottom:4px;">Transparency: <strong>${imp.transparency}</strong> | Direct Negotiation: <strong>${imp.ability_to_negotiate}</strong></div>
-      <div class="sub-text"><strong>Recommended Action:</strong> ${imp.recommended_action}</div>
+      <div style="font-weight:700; margin-bottom:6px; color:var(--g-green);"><i class="fa-solid fa-user-shield"></i> ${imp.impact_level}</div>
+      <div style="font-size:13px; margin-bottom:6px;">Negotiability: <strong>${imp.ability_to_negotiate}</strong></div>
+      <div style="font-size:12px; color:var(--g-gray-700); background:var(--g-gray-50); padding:8px; border-radius:var(--radius-sm);">
+        <strong>Recommended Action:</strong> ${imp.recommended_action}
+      </div>
     `;
   } else {
-    const eng = currentContract.engineering_score;
+    const eng = currentContract.engineering_score || { readiness_level: 'Engineering Execution Ready', milestone_count: 4, deliverable_count: 10, acceptance_criteria_count: 8, scope_creep_risk: 'Medium' };
     box.innerHTML = `
-      <div style="font-weight:700; margin-bottom:4px;"><i class="fa-solid fa-compass-drafting g-purple"></i> ${eng.readiness_level}</div>
-      <div style="display:flex; gap:12px; margin-bottom:6px;">
+      <div style="font-weight:700; margin-bottom:6px; color:var(--g-purple);"><i class="fa-solid fa-compass-drafting"></i> ${eng.readiness_level}</div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px;">
         <span>Milestones: <strong>${eng.milestone_count}</strong></span>
         <span>Deliverables: <strong>${eng.deliverable_count}</strong></span>
-        <span>Acceptance Criteria: <strong>${eng.acceptance_criteria_count}</strong></span>
+        <span>Criteria: <strong>${eng.acceptance_criteria_count}</strong></span>
       </div>
-      <div class="sub-text"><strong>Scope Creep Risk:</strong> ${eng.scope_creep_risk}</div>
+      <div style="font-size:12px; color:var(--g-gray-700); background:var(--g-gray-50); padding:8px; border-radius:var(--radius-sm);">
+        <strong>Scope Risk:</strong> ${eng.scope_creep_risk}
+      </div>
     `;
   }
 }
@@ -147,10 +172,15 @@ function renderTopIssues() {
   const container = document.getElementById('top-issues-list');
   const issues = currentContract.top_issues || [];
 
+  if (!issues.length) {
+    container.innerHTML = `<span style="font-size:12px; color:var(--g-gray-500);">No critical issues flagged.</span>`;
+    return;
+  }
+
   container.innerHTML = issues.map(iss => `
-    <div class="top-issue-item" onclick="scrollToClause('${iss.id}')">
-      <span>${iss.title}</span>
-      <span class="badge badge-danger">${iss.severity} Risk</span>
+    <div class="top-issue-item" style="display:flex; justify-content:space-between; align-items:center; font-size:12px; background:var(--g-gray-50); padding:6px 10px; border-radius:4px; cursor:pointer;" onclick="scrollToClause('${iss.id}')">
+      <span style="font-weight:600; color:var(--g-gray-900);">${iss.title}</span>
+      <span class="badge ${iss.severity === 'High' ? 'badge-danger' : 'badge-warning'}">${iss.severity}</span>
     </div>
   `).join('');
 }
@@ -164,585 +194,497 @@ function renderRiskCards(filter = 'all') {
     clauses = clauses.filter(c => c.risk_level.toLowerCase() === filter.toLowerCase());
   }
 
+  if (!clauses.length) {
+    container.innerHTML = `<div class="dash-card" style="text-align:center; padding:32px; color:var(--g-gray-500);">No clauses match the selected filter.</div>`;
+    return;
+  }
+
   container.innerHTML = clauses.map(c => {
-    let cardClass = 'risk-card';
-    if (c.risk_level === 'Medium') cardClass += ' med-risk';
-    if (c.risk_level === 'Reasonable') cardClass += ' low-risk';
+    let riskClass = 'risk-card';
+    if (c.risk_level === 'High') riskClass += ' high-risk';
+    else if (c.risk_level === 'Medium') riskClass += ' med-risk';
+    else riskClass += ' low-risk';
 
     return `
-      <div class="${cardClass}" id="clause-card-${c.id}">
+      <div class="${riskClass}" id="clause-card-${c.id}">
         <div class="risk-card-header">
           <div>
-            <span class="section-kicker">${c.category.toUpperCase()} · ${c.section_ref}</span>
+            <span class="section-kicker">${c.category} · ${c.section_ref}</span>
             <h3 class="risk-card-title">${c.title}</h3>
           </div>
-          <span class="badge ${c.risk_level === 'High' ? 'badge-danger' : c.risk_level === 'Medium' ? 'badge-warning' : 'badge-success'}">
-            Risk: ${c.risk_level}
-          </span>
-        </div>
-
-        <p style="font-size:13px; font-weight:600; color:var(--g-gray-900); margin-top:6px;">
-          ${c.plain_english}
-        </p>
-
-        <!-- Risk Allocation Bar -->
-        <div class="risk-allocation-bar">
-          <div class="allocation-track">
-            <div class="alloc-you" style="width: ${c.allocation.you}%;"></div>
-            <div class="alloc-cp" style="width: ${c.allocation.counterparty}%;"></div>
-          </div>
-          <div class="allocation-labels">
-            <span>You: ${c.allocation.you}% Risk</span>
-            <span>Counterparty: ${c.allocation.counterparty}% Risk</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="badge ${c.risk_level === 'High' ? 'badge-danger' : c.risk_level === 'Medium' ? 'badge-warning' : 'badge-success'}">
+              ${c.risk_level} Risk (${c.risk_score || 50}/100)
+            </span>
+            <button class="btn-action" onclick="openSimForClause('${c.id}')" title="Simulate Negotiation">
+              <i class="fa-solid fa-comments g-blue"></i>
+            </button>
           </div>
         </div>
 
-        <p class="sub-text" style="margin-bottom:8px;"><strong>Why It Matters:</strong> ${c.why_it_matters}</p>
-
-        <div class="clause-quote-box">
-          <i class="fa-solid fa-quote-left"></i> Contract Quote: "${c.contract_quote}"
+        <div class="quote-box">
+          <i class="fa-solid fa-quote-left" style="color:var(--g-gray-400); margin-right:4px;"></i> "${c.contract_quote}"
         </div>
 
-        <div class="risk-card-actions">
-          ${activeMode === 'b2b' ? `
-            <button class="btn btn-sm btn-primary" onclick="openMakeFairModal('${c.id}')">
-              <i class="fa-solid fa-scale-unbalanced-flip"></i> Make This Fair
-            </button>
-            <button class="btn btn-sm btn-secondary" onclick="openDiffModal('${c.id}')">
-              <i class="fa-solid fa-code-compare"></i> Redline Compromise
-            </button>
-            <button class="btn btn-sm btn-outline" onclick="openSimulateDrawer('${c.id}')">
-              <i class="fa-solid fa-comments"></i> Simulate Negotiation
-            </button>
-          ` : `
-            <button class="btn btn-sm btn-primary" onclick="switchTab('mode-feature')">
-              <i class="fa-solid fa-scale-unbalanced"></i> View Rights Lens
-            </button>
-            <button class="btn btn-sm btn-secondary" onclick="openDiffModal('${c.id}')">
-              <i class="fa-solid fa-file-pen"></i> Consumer Counter
-            </button>
-            <button class="btn btn-sm btn-outline" onclick="askCounselAction()">
-              <i class="fa-solid fa-user-doctor"></i> Ask Counsel
-            </button>
-          `}
+        <div class="analysis-grid">
+          <div class="analysis-box">
+            <div class="analysis-box-title"><i class="fa-solid fa-circle-info g-blue"></i> Plain English Meaning</div>
+            <p>${c.plain_english}</p>
+          </div>
+          <div class="analysis-box">
+            <div class="analysis-box-title"><i class="fa-solid fa-triangle-exclamation g-red"></i> Why It Matters</div>
+            <p>${c.why_it_matters}</p>
+          </div>
         </div>
+
+        <div class="analysis-grid">
+          <div class="analysis-box">
+            <div class="analysis-box-title"><i class="fa-solid fa-scale-balanced g-green"></i> Legal / Market Context</div>
+            <p>${c.law_may_say}</p>
+          </div>
+          <div class="analysis-box">
+            <div class="analysis-box-title"><i class="fa-solid fa-lightbulb g-yellow"></i> Negotiation Recommendation</div>
+            <p>${c.negotiation_recommendation}</p>
+          </div>
+        </div>
+
+        ${c.diff ? `
+          <div class="diff-container">
+            <div style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; color:var(--g-gray-700);">
+              <i class="fa-solid fa-code-compare g-purple"></i> Proposed Balanced Redline
+            </div>
+            <div class="diff-original"><strong>- Original:</strong> ${c.diff.original}</div>
+            <div class="diff-proposed"><strong>+ Proposed Redline:</strong> ${c.diff.proposed}</div>
+            <div style="font-size:12px; color:var(--g-gray-700); margin-top:6px;"><strong>Rationale:</strong> ${c.diff.explanation}</div>
+          </div>
+        ` : ''}
+
       </div>
     `;
   }).join('');
 }
 
-function filterRiskCards(filter, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+function filterRiskCards(filter) {
   renderRiskCards(filter);
 }
 
 function scrollToClause(clauseId) {
   switchTab('risks');
-  const elem = document.getElementById(`clause-card-${clauseId}`);
-  if (elem) {
-    elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  setTimeout(() => {
+    const el = document.getElementById(`clause-card-${clauseId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.boxShadow = '0 0 0 3px var(--g-blue)';
+      setTimeout(() => el.style.boxShadow = '', 2000);
+    }
+  }, 100);
 }
 
-// 6. Render Mode-Specific Feature (Win-Win Negotiation OR Rights Lens OR SOW Engineering Roadmap)
+// 6. Mode Specific Features
 function renderModeSpecificFeature() {
-  const container = document.getElementById('mode-feature-container');
+  const container = document.getElementById('mode-specific-feature-container');
 
   if (activeMode === 'b2b') {
-    const clauses = currentContract.clauses.filter(c => c.middle_ground);
-    container.innerHTML = clauses.map(c => `
-      <div class="feature-card" style="margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3><i class="fa-solid fa-handshake g-blue"></i> ${c.title}</h3>
-          <span class="badge badge-info">Win-Win Middle Ground</span>
-        </div>
-
-        <div class="winwin-grid">
-          <div><strong>Your Concern:</strong> ${c.middle_ground.your_concern}</div>
-          <div><strong>Their Likely Concern:</strong> ${c.middle_ground.their_concern}</div>
-          <div style="grid-column: span 2;"><strong>Shared Objective:</strong> ${c.middle_ground.shared_objective}</div>
-        </div>
-
-        <div class="suggested-response-box">
-          <strong>Suggested Response:</strong>
-          <p style="margin-top:4px;">${c.middle_ground.suggested_response}</p>
-        </div>
-      </div>
-    `).join('');
+    renderB2BWinWinFeature(container);
   } else if (activeMode === 'eula') {
-    const clauses = currentContract.clauses.filter(c => c.principles_lens);
-    container.innerHTML = clauses.map(c => `
-      <div class="feature-card" style="margin-bottom:16px; border-left: 4px solid #a855f7;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3><i class="fa-solid fa-landmark g-purple"></i> ${c.title}</h3>
-          <span class="principles-badge">${c.principles_lens.principle} Lens</span>
-        </div>
-
-        <p style="font-size:12px; color:var(--g-gray-700); margin:8px 0;">
-          <strong>Historical Source Material Context:</strong> ${c.principles_lens.historical_context}
-        </p>
-
-        <div style="background-color:#f3e8ff; padding:12px; border-radius:8px; font-size:13px; margin:8px 0; color:#581c87;">
-          <strong>Rights & Principles Analysis:</strong> ${c.principles_lens.analysis}
-        </div>
-
-        <div style="background-color:var(--g-gray-100); padding:8px 12px; border-radius:6px; font-size:11px; color:var(--g-gray-700);">
-          <i class="fa-solid fa-circle-info"></i> ${c.principles_lens.disclaimer}
-        </div>
-      </div>
-    `).join('');
+    renderEULARightsFeature(container);
   } else {
-    // SOW Engineering Delivery Roadmap Mode
-    const milestones = currentContract.milestones || [];
-    container.innerHTML = `
-      <!-- SOW Copilot Q&A Box -->
-      <div class="feature-card" style="margin-bottom:20px; background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%); border: 1px solid #d8b4fe;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <h3><i class="fa-solid fa-robot g-purple"></i> Ask Gemini SOW Engineering Copilot</h3>
-          <span class="badge badge-info">Interactive Query Tool</span>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="sow-query-input" placeholder="Ask about SLAs, penalties, security requirements, or scope limits (e.g. 'What is the penalty for missing cutover SLA?')..." style="flex:1; padding:10px 14px; border:1px solid var(--g-gray-300); border-radius:8px; font-size:13px;" onkeydown="if(event.key==='Enter') querySowCopilot()">
-          <button class="btn btn-primary" onclick="querySowCopilot()"><i class="fa-solid fa-magnifying-glass"></i> Ask Copilot</button>
-        </div>
-        <div id="sow-query-response" class="hidden" style="margin-top:12px; background:#ffffff; padding:12px; border-radius:8px; border:1px solid #e9d5ff; font-size:13px;">
-          <!-- Response -->
-        </div>
-      </div>
-
-      <!-- SOW Milestones & Deliverables -->
-      <div style="margin-bottom:12px; font-weight:700; font-size:16px;">
-        <i class="fa-solid fa-timeline g-blue"></i> Technical Milestone Delivery Roadmap (Phases 1-4)
-      </div>
-
-      ${milestones.map(m => `
-        <div class="feature-card" style="margin-bottom:16px; border-left: 4px solid ${m.risk_level === 'High' ? 'var(--g-red)' : m.risk_level === 'Medium' ? 'var(--g-yellow)' : 'var(--g-green)'};">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <span class="section-kicker">${m.phase.toUpperCase()} · ${m.payout}</span>
-              <h3>${m.title}</h3>
-              <p class="sub-text">Assigned Tech Lead: <strong>${m.tech_lead}</strong></p>
-            </div>
-            <span class="badge ${m.risk_level === 'High' ? 'badge-danger' : m.risk_level === 'Medium' ? 'badge-warning' : 'badge-success'}">
-              Technical Risk: ${m.risk_level}
-            </span>
-          </div>
-
-          <!-- Deliverables List -->
-          <div style="margin:12px 0;">
-            <strong style="font-size:12px; color:var(--g-gray-800);">Engineered Deliverables:</strong>
-            <ul style="padding-left:20px; font-size:13px; margin-top:4px;">
-              ${m.deliverables.map(d => `<li style="margin-bottom:3px;">${d}</li>`).join('')}
-            </ul>
-          </div>
-
-          <!-- Interactive Acceptance Criteria Checklist -->
-          <div style="background-color: var(--g-gray-50); padding:12px; border-radius:8px; margin-top:8px;">
-            <strong style="font-size:12px; color:var(--g-gray-800);"><i class="fa-solid fa-list-check g-green"></i> Acceptance Criteria & Testing Verification:</strong>
-            <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-              ${m.acceptance_criteria.map(ac => `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; padding:6px 10px; border-radius:6px; border:1px solid var(--g-gray-200); font-size:12px;">
-                  <span>${ac.text}</span>
-                  <button class="btn btn-sm ${ac.status === 'Passed' ? 'btn-demo' : ac.status === 'In Testing' ? 'btn-secondary' : 'btn-outline'}" onclick="toggleAcceptanceStatus('${m.id}', '${ac.id}')">
-                    ${ac.status}
-                  </button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    `;
+    renderSOWRoadmapFeature(container);
   }
 }
 
-async function querySowCopilot() {
-  const input = document.getElementById('sow-query-input');
-  const q = input.value.trim();
-  if (!q) return;
+function renderB2BWinWinFeature(container) {
+  const clauses = currentContract.clauses || [];
+  container.innerHTML = `
+    <div class="dash-card" style="margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="fa-solid fa-handshake g-blue"></i> Win-Win Commercial Negotiation Matrix</h2>
+      <p style="font-size:13px; color:var(--g-gray-700); margin-bottom:16px;">
+        Maps your legitimate concerns against the counterparty's operational priorities to uncover balanced middle-ground positions.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        ${clauses.map(c => c.middle_ground ? `
+          <div style="background:var(--g-gray-50); border:1px solid var(--g-gray-200); border-radius:var(--radius-sm); padding:16px;">
+            <h3 style="font-size:15px; font-weight:700; margin-bottom:10px;">${c.title}</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px; margin-bottom:12px;">
+              <div style="background:#fff; padding:10px; border-radius:4px; border-left:3px solid var(--g-blue);">
+                <strong>Your Concern:</strong> ${c.middle_ground.your_concern}
+              </div>
+              <div style="background:#fff; padding:10px; border-radius:4px; border-left:3px solid var(--g-purple);">
+                <strong>Their Likely Concern:</strong> ${c.middle_ground.their_concern}
+              </div>
+            </div>
+            <div style="background:var(--g-green-light); padding:12px; border-radius:4px; font-size:13px; margin-bottom:10px; color:#166534;">
+              <strong><i class="fa-solid fa-circle-check"></i> Reasonable Compromise:</strong> ${c.middle_ground.compromise_proposal}
+            </div>
+            <div style="background:#fff; padding:12px; border-radius:4px; font-size:13px; border:1px dashed var(--g-gray-300);">
+              <strong>Ready-to-Send Email Draft:</strong>
+              <p style="font-style:italic; margin-top:4px; color:var(--g-gray-700);">${c.middle_ground.suggested_response}</p>
+            </div>
+          </div>
+        ` : '').join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderEULARightsFeature(container) {
+  const principles = currentContract.rights_principles || [];
+  const optOut = currentContract.arbitration_opt_out || {};
+
+  container.innerHTML = `
+    <div class="dash-card" style="margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="fa-solid fa-landmark g-green"></i> Rights & Principles Lens</h2>
+      <p style="font-size:13px; color:var(--g-gray-700); margin-bottom:16px;">
+        Evaluates consumer adhesion contracts through the principles of autonomy, meaningful consent, property, and procedural fairness.
+      </p>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:24px;">
+        ${principles.map(p => `
+          <div style="background:var(--g-gray-50); border:1px solid var(--g-gray-200); border-radius:var(--radius-sm); padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-weight:700; font-size:14px;">${p.principle}</span>
+              <span class="badge ${p.assessment === 'Violated' || p.assessment === 'Deprived' ? 'badge-danger' : 'badge-warning'}">${p.assessment}</span>
+            </div>
+            <div style="font-size:12px; color:var(--g-gray-500); margin-bottom:8px;"><strong>Source:</strong> ${p.source}</div>
+            <p style="font-size:13px; color:var(--g-gray-700);">${p.detail}</p>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="background:var(--g-yellow-light); border:1px solid var(--g-yellow); border-radius:var(--radius-sm); padding:20px;">
+        <h3 style="font-size:16px; font-weight:700; color:#b06000; margin-bottom:8px;">
+          <i class="fa-solid fa-envelope-open-text"></i> 30-Day Binding Arbitration Opt-Out Guide
+        </h3>
+        <p style="font-size:13px; margin-bottom:12px;">${optOut.instructions}</p>
+        <div style="font-size:13px; background:#fff; padding:12px; border-radius:4px; margin-bottom:12px;">
+          <div><strong>Physical Notice Address:</strong> ${optOut.opt_out_address}</div>
+          <div><strong>Email Notice:</strong> ${optOut.email_opt_out}</div>
+        </div>
+        <button class="btn-action btn-primary" onclick="copyOptOutLetter()">
+          <i class="fa-solid fa-copy"></i> Copy Formal Opt-Out Letter
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSOWRoadmapFeature(container) {
+  const milestones = currentContract.milestones || [];
+
+  container.innerHTML = `
+    <div class="dash-card" style="margin-bottom:20px;">
+      <h2 style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="fa-solid fa-compass-drafting g-purple"></i> SOW Technical Milestone Delivery Matrix</h2>
+      <p style="font-size:13px; color:var(--g-gray-700); margin-bottom:16px;">
+        Translates contractual commitments into structured engineering phases, leads, and verifiable acceptance criteria.
+      </p>
+
+      <!-- SOW Copilot Q&A Bar -->
+      <div style="background:var(--g-purple-light); padding:16px; border-radius:var(--radius-sm); margin-bottom:24px; border:1px solid #d8b4fe;">
+        <div style="font-size:13px; font-weight:700; color:var(--g-purple); margin-bottom:8px;">
+          <i class="fa-solid fa-robot"></i> Ask SOW Copilot
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="sow-qa-input" placeholder="Ask e.g. 'What is the penalty for missing cutover SLA?' or 'What are the Phase 1 deliverables?'" style="flex:1; padding:8px 14px; border:1px solid var(--g-gray-300); border-radius:var(--radius-sm); font-size:13px; outline:none;" onkeydown="if(event.key==='Enter') askSowQuestion()">
+          <button class="btn-action btn-primary" onclick="askSowQuestion()">
+            <i class="fa-solid fa-paper-plane"></i> Ask
+          </button>
+        </div>
+        <div id="sow-qa-answer-box" style="display:none; margin-top:12px; background:#fff; padding:12px; border-radius:4px; font-size:13px;"></div>
+      </div>
+
+      <!-- Milestone Phases -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        ${milestones.map((m, pIdx) => `
+          <div style="background:#fff; border:1px solid var(--g-gray-200); border-radius:var(--radius-sm); padding:20px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div>
+                <span class="badge badge-purple" style="margin-bottom:4px;">${m.weeks} · Fee: ${m.fee}</span>
+                <h3 style="font-size:16px; font-weight:700;">${m.title}</h3>
+                <span style="font-size:12px; color:var(--g-gray-500);"><i class="fa-solid fa-user-gear"></i> Assigned Lead: <strong>${m.lead}</strong></span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <strong style="font-size:13px; text-transform:uppercase; color:var(--g-gray-700);">Key Deliverables:</strong>
+              <ul style="margin-left:20px; font-size:13px; margin-top:4px; color:var(--g-gray-700);">
+                ${m.deliverables.map(d => `<li>${d}</li>`).join('')}
+              </ul>
+            </div>
+
+            <div>
+              <strong style="font-size:13px; text-transform:uppercase; color:var(--g-gray-700);">Acceptance Criteria Checklist:</strong>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+                ${m.acceptance_criteria.map((c, cIdx) => `
+                  <div style="display:flex; justify-content:space-between; align-items:center; background:var(--g-gray-50); padding:8px 12px; border-radius:4px; font-size:13px;">
+                    <span>${c.text}</span>
+                    <button class="btn-action" style="padding:4px 10px; font-size:11px;" onclick="toggleAcceptance(${pIdx}, ${cIdx})">
+                      ${c.status === 'Passed' ? '🟢 Passed' : c.status === 'In Testing' ? '🟡 In Testing' : '⚪ Pending'}
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+          </div>
+        `).join('')}
+      </div>
+
+    </div>
+  `;
+}
+
+function toggleAcceptance(pIdx, cIdx) {
+  if (!currentContract.milestones) return;
+  const item = currentContract.milestones[pIdx].acceptance_criteria[cIdx];
+  if (item.status === 'Pending') item.status = 'In Testing';
+  else if (item.status === 'In Testing') item.status = 'Passed';
+  else item.status = 'Pending';
+  renderModeSpecificFeature();
+}
+
+async function askSowQuestion() {
+  const input = document.getElementById('sow-qa-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  const box = document.getElementById('sow-qa-answer-box');
+  box.style.display = 'block';
+  box.innerHTML = `<i class="fa-solid fa-spinner fa-spin g-purple"></i> Analyzing SOW text...`;
 
   try {
     const res = await fetch('/api/sow-ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q })
+      body: JSON.stringify({ question: query })
     });
     const data = await res.json();
-
-    const box = document.getElementById('sow-query-response');
-    box.classList.remove('hidden');
     box.innerHTML = `
-      <strong style="color:var(--g-blue);"><i class="fa-solid fa-sparkles"></i> Gemini SOW Copilot Answer:</strong>
-      <p style="margin-top:4px;">${data.answer}</p>
-      <div style="margin-top:6px; font-size:11px; color:var(--g-gray-700);">
-        <strong>Grounded SOW Citations:</strong> ${data.sources.join(' · ')}
-      </div>
+      <div style="font-weight:700; color:var(--g-purple); margin-bottom:4px;"><i class="fa-solid fa-robot"></i> SOW Copilot Answer:</div>
+      <p style="margin-bottom:8px;">${data.answer}</p>
+      ${data.sources && data.sources.length ? `<div style="font-size:11px; color:var(--g-gray-500);"><strong>Sources:</strong> ${data.sources.join(', ')}</div>` : ''}
     `;
   } catch (err) {
-    showToast('Failed to query SOW Copilot', 'error');
+    box.innerHTML = `<span style="color:var(--g-red);">Failed to fetch answer.</span>`;
   }
 }
 
-function toggleAcceptanceStatus(milestoneId, criteriaId) {
-  const milestone = currentContract.milestones.find(m => m.id === milestoneId);
-  if (!milestone) return;
-
-  const ac = milestone.acceptance_criteria.find(a => a.id === criteriaId);
-  if (!ac) return;
-
-  if (ac.status === 'Pending') ac.status = 'In Testing';
-  else if (ac.status === 'In Testing') ac.status = 'Passed';
-  else ac.status = 'Pending';
-
-  renderModeSpecificFeature();
-  showToast(`Updated '${ac.text.substring(0, 30)}...' to ${ac.status}`, 'info');
-}
-
-// 7. Full Contract Text Viewer
+// 7. Full Text & Global Challenge
 function renderFullContractText() {
-  const container = document.getElementById('contract-full-text-body');
-  const clauses = currentContract.clauses || [];
-
-  container.innerHTML = `
-    <div style="font-family: var(--font-mono); font-size:12px; line-height:1.6; color: var(--g-gray-800);">
-      <h4>${currentContract.title.toUpperCase()}</h4>
-      <p style="margin-bottom:16px;">This Agreement is entered into by and between the parties identified herein...</p>
-
-      ${clauses.map(c => `
-        <div style="margin-bottom:20px; padding:10px; background-color: var(--g-gray-50); border-left: 3px solid var(--g-blue);">
-          <strong>${c.section_ref.toUpperCase()} — ${c.title.toUpperCase()}</strong>
-          <p style="margin-top:6px; font-style:italic;">"${c.contract_quote}"</p>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  document.getElementById('full-contract-raw-text').innerText = currentContract.full_text || 'No raw contract text loaded.';
 }
 
-function updateBadges() {
-  document.getElementById('tab-badge-risks').innerText = currentContract.clauses.length;
-}
+async function loadChallengeNext() {
+  const container = document.getElementById('challenge-next-card-content');
+  container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin g-blue"></i> Computing priority...</div>`;
 
-// Tab Switching
-function switchTab(tabId) {
-  currentTab = tabId;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
-
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById(`tab-${tabId}`)?.classList.add('active');
-}
-
-// MODAL: Make This Fair (8-Point Balance Evaluation)
-async function openMakeFairModal(clauseId) {
-  try {
-    const res = await fetch('/api/make-fair', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clause_id: clauseId, mode: activeMode })
-    });
-    const data = await res.json();
-    const evalData = data.fairness_evaluation;
-
-    const body = document.getElementById('make-fair-body');
-    body.innerHTML = `
-      <h3 style="font-size:16px; margin-bottom:12px;">Clause: ${evalData.clause_title}</h3>
-      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
-        ${evalData.questions.map(item => `
-          <div style="background-color: var(--g-gray-50); padding:10px; border-radius:8px; font-size:13px;">
-            <strong style="color:var(--g-blue);">${item.q}</strong>
-            <p style="margin-top:4px;">${item.a}</p>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="suggested-response-box">
-        <strong>Recommended Compromise:</strong>
-        <p style="margin-top:4px; font-weight:600;">${evalData.recommended_compromise}</p>
-        <p style="margin-top:8px; font-style:italic;">Suggested text: "${evalData.suggested_response}"</p>
-      </div>
-    `;
-
-    document.getElementById('modal-make-fair').classList.remove('hidden');
-  } catch (err) {
-    showToast('Failed to evaluate clause fairness', 'error');
-  }
-}
-
-function closeMakeFairModal() {
-  document.getElementById('modal-make-fair').classList.add('hidden');
-}
-
-function copySuggestedCompromise() {
-  showToast('Suggested response copied to clipboard!', 'success');
-  closeMakeFairModal();
-}
-
-// MODAL: Clause Comparison Diff View
-function openDiffModal(clauseId) {
-  const clause = currentContract.clauses.find(c => c.id === clauseId) || currentContract.clauses[0];
-  if (!clause || !clause.diff) return;
-
-  document.getElementById('diff-original-text').innerText = clause.diff.original;
-  document.getElementById('diff-proposed-text').innerText = clause.diff.proposed;
-  document.getElementById('diff-explanation-text').innerText = clause.diff.explanation;
-
-  document.getElementById('modal-diff').classList.remove('hidden');
-}
-
-function closeDiffModal() {
-  document.getElementById('modal-diff').classList.add('hidden');
-}
-
-// DRAWER: Counterparty Negotiation Simulator
-function openSimulateDrawer(clauseId) {
-  const drawer = document.getElementById('sim-drawer');
-  drawer.classList.add('open');
-
-  const clause = currentContract.clauses.find(c => c.id === clauseId) || currentContract.clauses[0];
-  chatHistory = [
-    { sender: 'counterparty', text: `Hello! I am the Provider's contract agent. Regarding '${clause.title}', what specific adjustment would you like to request?` }
-  ];
-  renderChatHistory();
-}
-
-function closeSimulateDrawer() {
-  document.getElementById('sim-drawer').classList.remove('open');
-}
-
-function renderChatHistory() {
-  const body = document.getElementById('sim-chat-body');
-  body.innerHTML = chatHistory.map(m => `
-    <div class="chat-msg ${m.sender === 'user' ? 'chat-user' : 'chat-counterparty'}">
-      ${m.text}
-    </div>
-  `).join('');
-  body.scrollTop = body.scrollHeight;
-}
-
-async function sendSimMessage() {
-  const input = document.getElementById('sim-user-input');
-  const text = input.value.trim();
-  if (!text) return;
-
-  chatHistory.push({ sender: 'user', text: text });
-  input.value = '';
-  renderChatHistory();
-
-  try {
-    const res = await fetch('/api/counterparty-simulate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ history: chatHistory, message: text, mode: activeMode })
-    });
-    const data = await res.json();
-    const sim = data.simulation;
-
-    chatHistory.push({ sender: 'counterparty', text: sim.reply });
-    renderChatHistory();
-
-    document.getElementById('sim-status-indicator').innerText = sim.status_label;
-    document.getElementById('sim-next-move-text').innerText = sim.next_move;
-  } catch (err) {
-    showToast('Simulation error', 'error');
-  }
-}
-
-// MODAL: Next Challenge Prioritization
-async function triggerNextChallenge() {
   try {
     const res = await fetch('/api/next-challenge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: activeMode })
+      body: JSON.stringify({ type: activeMode })
     });
     const data = await res.json();
-    const chal = data.challenge;
-
-    const body = document.getElementById('next-challenge-body');
-    body.innerHTML = `
-      <h3 style="font-size:18px; font-weight:700; color:var(--g-gray-900); margin-bottom:8px;">${chal.title}</h3>
-      <p style="font-size:13px; color:var(--g-gray-800); margin-bottom:12px;"><strong>Why This Matters:</strong> ${chal.why}</p>
-      
-      <div style="background-color:var(--g-blue-light); padding:12px; border-radius:8px; font-size:13px; margin-bottom:12px;">
-        <strong>Principle Involved:</strong> ${chal.principle_involved}<br>
-        <strong>Practical Consequence:</strong> ${chal.practical_consequence}
-      </div>
-
-      <div class="suggested-response-box">
-        <strong>Reasonable Challenge Proposal:</strong>
-        <p style="margin-top:4px;">${chal.reasonable_challenge}</p>
+    container.innerHTML = `
+      <div style="background:var(--g-gray-50); border:1px solid var(--g-gray-200); border-radius:var(--radius-sm); padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="font-size:18px; font-weight:700; color:var(--g-gray-900);">${data.title}</h3>
+          <span class="badge badge-danger">Priority Score: ${data.priority_score}/100</span>
+        </div>
+        <div class="quote-box" style="margin-bottom:14px;">"${data.contract_quote}"</div>
+        <div style="margin-bottom:12px; font-size:13px;"><strong>Why Challenge This First:</strong> ${data.why_challenge_now}</div>
+        <div style="background:#fff; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--g-gray-300); margin-bottom:16px;">
+          <strong style="font-size:13px; color:var(--g-blue);"><i class="fa-solid fa-envelope"></i> Recommended Challenge Message:</strong>
+          <p style="font-size:13px; font-style:italic; margin-top:4px;">${data.ready_to_send_proposal}</p>
+        </div>
+        <button class="btn-action btn-primary" onclick="scrollToClause('${data.clause_id}')">
+          <i class="fa-solid fa-arrow-right"></i> View Full Redline Diff
+        </button>
       </div>
     `;
-
-    document.getElementById('modal-next-challenge').dataset.targetId = chal.target_clause_id;
-    document.getElementById('modal-next-challenge').classList.remove('hidden');
   } catch (err) {
-    showToast('Failed to rank challenges', 'error');
+    container.innerHTML = `<span style="color:var(--g-red);">Failed to calculate challenge.</span>`;
   }
 }
 
-function closeNextChallengeModal() {
-  document.getElementById('modal-next-challenge').classList.add('hidden');
+function updateBadges() {
+  const count = (currentContract.clauses || []).length;
+  document.getElementById('badge-risk-count').innerText = count;
 }
 
-function executeChallengeFromModal() {
-  const clauseId = document.getElementById('modal-next-challenge').dataset.targetId;
-  closeNextChallengeModal();
-  openMakeFairModal(clauseId);
-}
-
-// MODAL: Paste Contract
+// 8. Modal & Paste Handler
 function openPasteModal() {
-  document.getElementById('modal-paste').classList.remove('hidden');
+  document.getElementById('paste-modal').classList.add('open');
+  document.getElementById('paste-contract-mode').value = activeMode;
 }
 
 function closePasteModal() {
-  document.getElementById('modal-paste').classList.add('hidden');
+  document.getElementById('paste-modal').classList.remove('open');
 }
 
 async function submitPastedContract() {
-  const text = document.getElementById('paste-text-area').value.trim();
-  if (!text) return;
+  const textarea = document.getElementById('paste-textarea');
+  const modeSelect = document.getElementById('paste-contract-mode');
+  const text = textarea.value.trim();
+  const selectedMode = modeSelect.value;
+
+  if (!text) {
+    showToast('Please paste some contract text first', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-analyze-paste');
+  const originalBtnHtml = btn.innerHTML;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...`;
+  btn.disabled = true;
 
   try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, mode: activeMode })
+      body: JSON.stringify({ text: text, type: selectedMode })
     });
-    const data = await res.json();
-    currentContract = data.contract;
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Server returned ${res.status}`);
+    }
+
+    const analyzedContract = await res.json();
+    currentContract = analyzedContract;
+    activeMode = analyzedContract.mode || selectedMode;
+
+    // Update Mode Switcher UI
+    document.getElementById('btn-mode-b2b').classList.toggle('active', activeMode === 'b2b');
+    document.getElementById('btn-mode-eula').classList.toggle('active', activeMode === 'eula');
+    document.getElementById('btn-mode-sow').classList.toggle('active', activeMode === 'sow');
+
     renderAll();
     closePasteModal();
-    showToast('Pasted contract analyzed successfully!', 'success');
+    textarea.value = '';
+    showToast('Contract analyzed successfully!', 'success');
   } catch (err) {
-    showToast('Failed to analyze pasted contract', 'error');
+    showToast(`Failed to analyze pasted contract: ${err.message}`, 'error');
+  } finally {
+    btn.innerHTML = originalBtnHtml;
+    btn.disabled = false;
   }
 }
 
-// Drag and Drop Upload
-function handleFileUpload(evt) {
-  const file = evt.target.files[0];
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
   if (!file) return;
 
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('contract_type', activeMode);
 
-  fetch(`/api/upload?mode=${activeMode}`, {
-    method: 'POST',
-    body: formData
-  }).then(res => res.json()).then(data => {
-    currentContract = data.contract;
-    renderAll();
-    showToast(`Uploaded and analyzed ${data.filename}`, 'success');
-  }).catch(() => showToast('Upload failed', 'error'));
-}
+  showToast('Uploading and parsing contract...', 'info');
 
-// Final Action Footer Buttons
-function askCounselAction() {
-  showToast('Questions flagged for Legal Counsel review.', 'info');
-}
-
-function acceptRiskAction() {
-  showToast('Contract terms accepted with logged risk profile.', 'success');
-}
-
-// Demo Tour Machine
-function toggleDemoTour() {
-  demoTourActive = !demoTourActive;
-  const banner = document.getElementById('demo-tour-banner');
-  if (demoTourActive) {
-    banner.classList.remove('hidden');
-    currentDemoStep = 1;
-    executeDemoStep();
-  } else {
-    banner.classList.add('hidden');
-  }
-}
-
-function executeDemoStep() {
-  document.getElementById('demo-step-number').innerText = `Step ${currentDemoStep} / ${TOTAL_DEMO_STEPS}`;
-
-  const titles = [
-    'Step 1: Open Contract Analysis',
-    'Step 2: Multi-Step Agentic Reasoning',
-    'Step 3: Contract Health Score & Leverage',
-    'Step 4: Inspect Priority Risk Card',
-    'Step 5: Make This Fair (8-Point Evaluation)',
-    'Step 6: Win-Win Negotiation Middle Ground',
-    'Step 7: Clause Comparison Redline Diff',
-    'Step 8: Simulate Counterparty Negotiation',
-    'Step 9: Interactive Multi-Turn Agreement',
-    'Step 10: Rank "What Should I Challenge Next?"',
-    'Step 11: Final Decision & Action Bar'
-  ];
-
-  const descs = [
-    'Review contract ingestion metadata and core terms.',
-    'Inspect Gemini agentic reasoning pipeline from jurisdiction to risks.',
-    'View health score (68/100) and negotiation leverage assessment.',
-    'Examine exact clause quote, plain English, and 85% risk allocation.',
-    'Click "Make This Fair" to run the 8-point balance evaluation.',
-    'Explore your concern vs their concern vs shared objective.',
-    'View proposed clause redline diff converting uncapped to mutual cap.',
-    'Open Counterparty Simulator to test negotiation pushback.',
-    'Watch AI reach a 2x super-cap compromise agreement live.',
-    'Trigger Next Challenge to rank single highest priority issue.',
-    'Select final decision: Negotiate, Challenge, Accept, or Ask Counsel.'
-  ];
-
-  document.getElementById('demo-step-title').innerText = titles[currentDemoStep - 1];
-  document.getElementById('demo-step-desc').innerText = descs[currentDemoStep - 1];
-
-  if (currentDemoStep === 4) scrollToClause('b2b-cl-1');
-  else if (currentDemoStep === 5) openMakeFairModal('b2b-cl-1');
-  else if (currentDemoStep === 6) { closeMakeFairModal(); switchTab('mode-feature'); }
-  else if (currentDemoStep === 7) openDiffModal('b2b-cl-1');
-  else if (currentDemoStep === 8) { closeDiffModal(); openSimulateDrawer('b2b-cl-1'); }
-  else if (currentDemoStep === 10) { closeSimulateDrawer(); triggerNextChallenge(); }
-}
-
-function nextDemoStep() {
-  if (currentDemoStep < TOTAL_DEMO_STEPS) {
-    currentDemoStep++;
-    executeDemoStep();
-  } else {
-    toggleDemoTour();
-    showToast('Demo tour completed!', 'success');
-  }
-}
-
-function prevDemoStep() {
-  if (currentDemoStep > 1) {
-    currentDemoStep--;
-    executeDemoStep();
-  }
-}
-
-// Reset State
-async function resetDemoState() {
   try {
-    const res = await fetch('/api/reset', { method: 'POST' });
-    await res.json();
+    const res = await fetch(`/api/upload?contract_type=${activeMode}`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    currentContract = await res.json();
+    renderAll();
+    showToast('File analyzed successfully!', 'success');
+  } catch (err) {
+    showToast('Failed to analyze uploaded file', 'error');
+  }
+}
+
+// 9. Negotiation Simulator Drawer
+function openSimulatorDrawer() {
+  document.getElementById('simulator-drawer').classList.add('open');
+}
+
+function closeSimulatorDrawer() {
+  document.getElementById('simulator-drawer').classList.remove('open');
+}
+
+function openSimForClause(clauseId) {
+  openSimulatorDrawer();
+  const clause = (currentContract.clauses || []).find(c => c.id === clauseId);
+  if (clause) {
+    const input = document.getElementById('sim-chat-input');
+    input.value = `Regarding ${clause.title}: Would you agree to make this liability cap mutual at 12 months fees?`;
+  }
+}
+
+async function sendSimMessage() {
+  const input = document.getElementById('sim-chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const chatContainer = document.getElementById('sim-chat-messages');
+
+  // Add User Bubble
+  chatContainer.innerHTML += `<div class="chat-bubble user">${msg}</div>`;
+  input.value = '';
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  // Add Loading Bubble
+  const loadingId = `load-${Date.now()}`;
+  chatContainer.innerHTML += `<div class="chat-bubble counterparty" id="${loadingId}"><i class="fa-solid fa-spinner fa-spin"></i> Legal counsel evaluating...</div>`;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  try {
+    const res = await fetch('/api/counterparty-simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, type: activeMode, history: chatHistory })
+    });
+    const data = await res.json();
+
+    const loadEl = document.getElementById(loadingId);
+    if (loadEl) loadEl.remove();
+
+    chatContainer.innerHTML += `
+      <div class="chat-bubble counterparty">
+        <div style="font-size:11px; font-weight:700; margin-bottom:4px;">${data.status_badge}</div>
+        <p>${data.reply}</p>
+        <div style="font-size:11px; color:var(--g-gray-500); margin-top:4px;"><strong>Suggested Move:</strong> ${data.recommended_action}</div>
+      </div>
+    `;
+    chatHistory.push({ user: msg, counterparty: data.reply });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  } catch (err) {
+    const loadEl = document.getElementById(loadingId);
+    if (loadEl) loadEl.innerHTML = `<span style="color:var(--g-red);">Simulation error.</span>`;
+  }
+}
+
+// 10. Utilities & Reset
+async function resetToDefaults() {
+  try {
+    await fetch('/api/reset', { method: 'POST' });
     fetchContractData(activeMode);
-    showToast('Demo state reset to baseline', 'info');
+    showToast('Reset to default reference contracts', 'success');
   } catch (err) {
     showToast('Failed to reset', 'error');
   }
 }
 
+function copyOptOutLetter() {
+  const letter = `To: NovaSmart Technologies Corp., Attn: Legal Arbitration Opt-Out
+Date: ${new Date().toLocaleDateString()}
+
+RE: FORMAL NOTICE OF ARBITRATION OPT-OUT
+
+I hereby give formal written notice pursuant to Section 21 of the NovaSmart Terms of Service that I opt out of and reject the mandatory binding arbitration agreement and class action waiver.
+
+Account Email: user@example.com
+Sincerely,
+[Your Name]`;
+  navigator.clipboard.writeText(letter);
+  showToast('Opt-out letter copied to clipboard!', 'success');
+}
+
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
-  toast.className = 'toast';
-  
-  let icon = 'fa-info-circle';
-  if (type === 'success') icon = 'fa-circle-check';
-  if (type === 'error') icon = 'fa-triangle-exclamation';
-
-  toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-xmark' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i> <span>${message}</span>`;
   container.appendChild(toast);
-
-  setTimeout(() => { toast.remove(); }, 3500);
+  setTimeout(() => toast.remove(), 4000);
 }
