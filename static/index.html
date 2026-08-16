@@ -3,402 +3,258 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contract Risk Agent | Intelligent Negotiation & Rights Analysis</title>
-
-  <!-- Google Fonts: Inter, Google Sans & Roboto Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-  <!-- FontAwesome Icons -->
+  <title>Contract Risk Agent — Intelligent Legal & SOW Roadmap Copilot</title>
+  <meta name="description" content="AI-assisted contract negotiation, consumer rights analysis, and SOW engineering delivery copilot powered by Google Gemini design patterns.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
-  <!-- Legal Disclaimer Banner -->
-  <div class="legal-disclaimer-bar">
-    <i class="fa-solid fa-scale-balanced disclaimer-icon"></i>
-    <span><strong>AI-assisted contract analysis — not legal advice.</strong> Important legal and contractual decisions should be reviewed with qualified counsel.</span>
+  <!-- Top Disclaimer Banner -->
+  <div class="disclaimer-banner">
+    <span><i class="fa-solid fa-scale-balanced"></i> <strong>Legal Disclaimer:</strong> AI-assisted contract analysis — not legal advice. Decisions should be reviewed with qualified counsel.</span>
+    <span><i class="fa-solid fa-shield-halved"></i> Powered by Google Antigravity & Gemini</span>
   </div>
 
-  <!-- App Header -->
+  <!-- Main Navigation Header -->
   <header class="app-header">
-    <div class="header-left">
-      <div class="google-logo">
-        <span class="g-blue">G</span><span class="g-red">e</span><span class="g-yellow">m</span><span class="g-blue">i</span><span class="g-green">n</span><span class="g-red">i</span>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-file-contract"></i>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="brand-title">Contract Risk Agent</span>
+            <span class="brand-badge">Gemini Copilot</span>
+          </div>
+        </div>
       </div>
-      <div class="title-group">
-        <h1 class="app-title">Contract Risk Agent</h1>
-        <p class="app-subtitle">Intelligent Contract Negotiation & Rights-Analysis Agent</p>
-      </div>
-    </div>
 
-    <!-- Mode Switcher Toggle -->
-    <div class="mode-switcher-container">
-      <div class="mode-toggle-group">
-        <button class="mode-btn active" id="btn-mode-b2b" onclick="switchMode('b2b')">
-          <i class="fa-solid fa-building"></i> B2B Contract
+      <!-- Mode Switcher -->
+      <div class="mode-switcher">
+        <button id="btn-mode-b2b" class="mode-btn active" onclick="switchMode('b2b')">
+          <i class="fa-solid fa-building"></i> B2B Negotiation
         </button>
-        <button class="mode-btn" id="btn-mode-eula" onclick="switchMode('eula')">
-          <i class="fa-solid fa-user-shield"></i> Consumer EULA
+        <button id="btn-mode-eula" class="mode-btn" onclick="switchMode('eula')">
+          <i class="fa-solid fa-user-shield"></i> EULA Rights Lens
         </button>
-        <button class="mode-btn" id="btn-mode-sow" onclick="switchMode('sow')">
+        <button id="btn-mode-sow" class="mode-btn" onclick="switchMode('sow')">
           <i class="fa-solid fa-compass-drafting"></i> SOW Engineering Roadmap
         </button>
       </div>
-    </div>
 
-    <div class="header-right">
-      <button class="btn btn-outline" onclick="openPasteModal()">
-        <i class="fa-solid fa-paste"></i> Paste Contract
-      </button>
-      <button class="btn btn-primary" onclick="triggerNextChallenge()">
-        <i class="fa-solid fa-bolt-lightning"></i> Next Challenge
-      </button>
-      <button class="btn btn-demo" onclick="toggleDemoTour()">
-        <i class="fa-solid fa-play"></i> Demo Mode
-      </button>
-      <button class="btn btn-icon" onclick="resetDemoState()" title="Reset Demo Data">
-        <i class="fa-solid fa-rotate-left"></i>
-      </button>
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <button class="btn-action btn-primary" onclick="openPasteModal()">
+          <i class="fa-solid fa-paste"></i> Paste Contract
+        </button>
+        <button class="btn-action" onclick="document.getElementById('file-upload-input').click()">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i> Upload
+        </button>
+        <input type="file" id="file-upload-input" style="display:none" onchange="handleFileUpload(event)">
+        <button class="btn-action" onclick="openSimulatorDrawer()">
+          <i class="fa-solid fa-comments"></i> Simulator
+        </button>
+        <button class="btn-action" onclick="resetToDefaults()" title="Reset to Seed Data">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Guided Demo Banner -->
-  <div id="demo-tour-banner" class="demo-banner hidden">
-    <div class="demo-step-info">
-      <span class="demo-step-badge" id="demo-step-number">Step 1 / 11</span>
-      <strong id="demo-step-title">Welcome to Demo Mode</strong>
-      <span id="demo-step-desc">Explore how Gemini moves beyond document summary into active negotiation and rights analysis.</span>
-    </div>
-    <div class="demo-step-actions">
-      <button class="btn btn-sm btn-outline" onclick="prevDemoStep()"><i class="fa-solid fa-chevron-left"></i> Prev</button>
-      <button class="btn btn-sm btn-primary" id="demo-next-btn" onclick="nextDemoStep()">Next <i class="fa-solid fa-chevron-right"></i></button>
-      <button class="btn btn-sm btn-text" onclick="toggleDemoTour()"><i class="fa-solid fa-xmark"></i> Exit</button>
-    </div>
-  </div>
-
-  <!-- Subtitle Mode Indicator -->
+  <!-- Subtitle Bar -->
   <div class="mode-subtitle-bar">
-    <span id="mode-subtitle-text"><i class="fa-solid fa-circle-info g-blue"></i> <strong>B2B Mode:</strong> Find risks and negotiate commercially reasonable middle ground.</span>
+    <div class="mode-subtitle-inner" id="mode-subtitle-text">
+      <i class="fa-solid fa-building g-blue"></i> <strong>B2B Mode:</strong> Find risks and negotiate commercially reasonable middle ground.
+    </div>
   </div>
 
-  <!-- Main Container -->
-  <div class="app-container">
-
-    <!-- Contract Upload / Ingestion Bar -->
-    <section class="card upload-card">
-      <div class="upload-flex">
-        <div class="drop-zone" id="drop-zone">
-          <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
-          <div>
-            <strong>Upload Contract</strong> (PDF, DOCX, TXT) or drag & drop here
-          </div>
-          <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt" onchange="handleFileUpload(event)">
-        </div>
-
-        <div class="ingest-info-box" id="ingest-info-box">
-          <span class="badge badge-success"><i class="fa-solid fa-file-contract"></i> Contract Identified</span>
-          <h3 id="contract-doc-title">Master Software-as-a-Service (SaaS) Agreement</h3>
-          <div class="doc-meta-grid" id="doc-meta-grid">
-            <!-- Dynamic metadata -->
+  <!-- Main Application Content -->
+  <main class="main-container">
+    
+    <!-- Top 3-Card Dashboard -->
+    <div class="dashboard-grid">
+      
+      <!-- 1. Health Score Gauge -->
+      <div class="dash-card health-score-container">
+        <div class="dash-card-header" style="width: 100%;">Contract Health Score</div>
+        <div class="health-circle" id="health-circle">
+          <div class="health-inner-circle">
+            <span class="health-score-num" id="health-score-num">--</span>
+            <span style="font-size: 11px; color: var(--g-gray-500);">/ 100</span>
           </div>
         </div>
-
-        <button class="btn btn-primary btn-lg" onclick="triggerAnalyzeContract()">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Contract
-        </button>
-      </div>
-    </section>
-
-    <!-- Visible Agent Activity Panel -->
-    <section class="card agent-panel">
-      <div class="agent-panel-header">
-        <div class="agent-title">
-          <div class="gemini-sparkle-icon"><i class="fa-solid fa-sparkles"></i></div>
-          <div>
-            <h3>Gemini Contract Intelligence Agent</h3>
-            <p class="agent-subtitle">Agentic legal reasoning, clause mapping & risk allocation engine</p>
-          </div>
-        </div>
-        <div class="agent-status-badge">
-          <span class="pulse-dot green"></span> Analysis Complete
+        <div class="health-status-label" id="health-status-label">Analyzing...</div>
+        <div class="health-breakdown-pills" id="health-breakdown-pills">
+          <!-- Populated by JS -->
         </div>
       </div>
 
-      <div class="agent-steps-grid" id="agent-steps-list">
-        <!-- Populated dynamically -->
-      </div>
-    </section>
-
-    <!-- Dashboard Main Grid -->
-    <div class="two-col-dashboard">
-
-      <!-- Left Column: Health Score & Top Issues -->
-      <div class="left-col">
-
-        <!-- Contract Health Card -->
-        <section class="card health-card">
-          <span class="section-kicker">CONTRACT HEALTH ASSESSMENT</span>
-          <div class="health-header">
-            <div class="gauge-box">
-              <div class="health-circle" id="health-circle">
-                <span class="health-score-val" id="health-score-num">68</span>
-                <span class="health-sub">/ 100</span>
-              </div>
-            </div>
-
-            <div class="health-details">
-              <h2 id="health-status-label">68 / 100 — Moderate Commercial Exposure</h2>
-              <div class="breakdown-pills" id="health-breakdown-pills">
-                <!-- Badges -->
-              </div>
-            </div>
+      <!-- 2. Document Ingestion Metadata -->
+      <div class="dash-card">
+        <div class="dash-card-header">Document Overview</div>
+        <h2 class="doc-title" id="contract-doc-title">Loading Contract...</h2>
+        <div class="doc-meta-grid" id="doc-meta-grid">
+          <!-- Populated by JS -->
+        </div>
+        <div style="margin-top: 16px; border-top: 1px solid var(--g-gray-200); padding-top: 12px;">
+          <div class="dash-card-header" style="margin-bottom: 6px;">Top Priority Issues</div>
+          <div id="top-issues-list" style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Populated by JS -->
           </div>
-
-          <!-- Score Card for B2B Leverage or EULA Impact -->
-          <div class="score-meta-box" id="score-meta-box">
-            <!-- Populated dynamically -->
-          </div>
-        </section>
-
-        <!-- Top Issues List -->
-        <section class="card">
-          <div class="card-header-flex">
-            <h3><i class="fa-solid fa-triangle-exclamation danger-text"></i> Priority Contract Issues</h3>
-            <button class="btn btn-sm btn-text" onclick="triggerNextChallenge()">Rank Challenges <i class="fa-solid fa-arrow-right"></i></button>
-          </div>
-          <div class="top-issues-list" id="top-issues-list">
-            <!-- Populated dynamically -->
-          </div>
-        </section>
-
+        </div>
       </div>
 
-      <!-- Right Column: Interactive Workspace Tabs -->
-      <div class="right-col">
-
-        <!-- Tab Bar -->
-        <div class="workspace-tabs-bar">
-          <button class="tab-btn active" data-tab="risks" onclick="switchTab('risks')">
-            <i class="fa-solid fa-shield-halved"></i> Risk Matrix (<span id="tab-badge-risks">4</span>)
-          </button>
-          <button class="tab-btn" id="tab-btn-mode-feature" data-tab="mode-feature" onclick="switchTab('mode-feature')">
-            <i class="fa-solid fa-scale-unbalanced"></i> <span id="tab-mode-feature-title">Win-Win Negotiation Engine</span>
-          </button>
-          <button class="tab-btn" data-tab="evidence" onclick="switchTab('evidence')">
-            <i class="fa-solid fa-scroll"></i> Grounded Contract Text
-          </button>
+      <!-- 3. Dynamic Mode Assessment -->
+      <div class="dash-card">
+        <div class="dash-card-header">Strategic Assessment</div>
+        <div id="score-meta-box">
+          <!-- Populated by JS -->
         </div>
-
-        <!-- TAB 1: Risk Matrix -->
-        <div id="tab-risks" class="tab-content active">
-          <div class="table-filters">
-            <button class="filter-btn active" onclick="filterRiskCards('all', this)">All Provisions</button>
-            <button class="filter-btn" onclick="filterRiskCards('High', this)">High Risk</button>
-            <button class="filter-btn" onclick="filterRiskCards('Medium', this)">Medium Risk</button>
-            <button class="filter-btn" onclick="filterRiskCards('Reasonable', this)">Reasonable</button>
-          </div>
-
-          <div class="risk-cards-grid" id="risk-cards-container">
-            <!-- Populated dynamically -->
+        <div style="margin-top: 16px; border-top: 1px solid var(--g-gray-200); padding-top: 12px;">
+          <div class="dash-card-header" style="margin-bottom: 6px;">Agent Activity</div>
+          <div id="agent-steps-list">
+            <!-- Populated by JS -->
           </div>
         </div>
-
-        <!-- TAB 2: Mode Specific Feature (B2B Middle Ground OR EULA Rights Lens) -->
-        <div id="tab-mode-feature" class="tab-content">
-          <div id="mode-feature-container">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-
-        <!-- TAB 3: Grounded Contract Text -->
-        <div id="tab-evidence" class="tab-content">
-          <div class="card evidence-viewer-card">
-            <div class="evidence-header">
-              <h3><i class="fa-solid fa-file-lines g-blue"></i> Full Grounded Contract Document</h3>
-              <span class="sub-text">Section quotes & evidence highlighted directly in source text</span>
-            </div>
-            <div class="contract-text-body" id="contract-full-text-body">
-              <!-- Rendered source text -->
-            </div>
-          </div>
-        </div>
-
       </div>
 
     </div>
 
-    <!-- Final Decision Action Bar -->
-    <footer class="final-action-footer">
-      <div class="footer-title-box">
-        <h2>Contract understood. Now decide what to do.</h2>
-        <p id="footer-tagline">Find the agreement both sides can live with.</p>
-      </div>
+    <!-- Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" id="tab-btn-risks" onclick="switchTab('risks')">
+        <i class="fa-solid fa-triangle-exclamation"></i> Risk Matrix & Redlines (<span id="badge-risk-count">0</span>)
+      </button>
+      <button class="tab-btn" id="tab-btn-feature" onclick="switchTab('feature')">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="tab-mode-feature-title">Win-Win Negotiation Engine</span>
+      </button>
+      <button class="tab-btn" id="tab-btn-challenge" onclick="switchTab('challenge')">
+        <i class="fa-solid fa-bullseye"></i> What Should I Challenge Next?
+      </button>
+      <button class="tab-btn" id="tab-btn-text" onclick="switchTab('text')">
+        <i class="fa-solid fa-file-lines"></i> Full Contract Text
+      </button>
+    </div>
 
-      <div class="footer-btn-group">
-        <button class="btn btn-outline btn-lg" onclick="openSimulateDrawer()">
-          <i class="fa-solid fa-comments"></i> Negotiate
-        </button>
-        <button class="btn btn-secondary btn-lg" onclick="triggerNextChallenge()">
-          <i class="fa-solid fa-gavel"></i> Challenge
-        </button>
-        <button class="btn btn-outline btn-lg" onclick="askCounselAction()">
-          <i class="fa-solid fa-user-doctor"></i> Ask Counsel
-        </button>
-        <button class="btn btn-primary btn-lg" onclick="acceptRiskAction()">
-          <i class="fa-solid fa-circle-check"></i> Accept Terms
+    <!-- Tab 1: Risk Cards Container -->
+    <section id="tab-content-risks">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 14px; font-weight: 600; color: var(--g-gray-700);">
+          Identified Clauses & Recommended Adjustments
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-action" onclick="filterRiskCards('all')">All</button>
+          <button class="btn-action" onclick="filterRiskCards('high')">High Risk</button>
+          <button class="btn-action" onclick="filterRiskCards('medium')">Medium</button>
+          <button class="btn-action" onclick="filterRiskCards('reasonable')">Reasonable</button>
+        </div>
+      </div>
+      <div class="risk-cards-grid" id="risk-cards-container">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Tab 2: Mode Specific Feature Container -->
+    <section id="tab-content-feature" style="display: none;">
+      <div id="mode-specific-feature-container">
+        <!-- Populated dynamically based on B2B, EULA, or SOW -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Global Priority Challenge -->
+    <section id="tab-content-challenge" style="display: none;">
+      <div class="dash-card" style="padding: 32px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div style="background-color: var(--g-blue-light); color: var(--g-blue); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            <i class="fa-solid fa-bullseye"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 20px; font-weight: 700;">Global Priority Challenge Optimizer</h2>
+            <p style="font-size: 13px; color: var(--g-gray-700);">
+              Uses the formula: \(\text{Priority} = \text{Severity} \times \text{Financial Impact} \times \text{Practical Importance} \times \text{Leverage}\)
+            </p>
+          </div>
+        </div>
+        <div id="challenge-next-card-content">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Full Contract Text -->
+    <section id="tab-content-text" style="display: none;">
+      <div class="dash-card">
+        <div class="dash-card-header">Underlying Contract Transcript</div>
+        <pre id="full-contract-raw-text" style="white-space: pre-wrap; font-family: monospace; font-size: 13px; background: var(--g-gray-50); padding: 16px; border-radius: var(--radius-sm); max-height: 600px; overflow-y: auto;"></pre>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Paste Contract -->
+  <div class="modal-backdrop" id="paste-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700;"><i class="fa-solid fa-paste g-blue"></i> Paste Contract Text</h3>
+        <button class="btn-action" onclick="closePasteModal()" style="border:none; padding:4px 8px;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--g-gray-700); margin-bottom: 12px;">
+          Paste full contract text, EULA terms, MSA clauses, or SOW statements below. The AI Agent will parse risks, redlines, and delivery milestones.
+        </p>
+        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center;">
+          <label style="font-size: 13px; font-weight: 600;">Contract Mode:</label>
+          <select id="paste-contract-mode" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--g-gray-300); font-family: inherit;">
+            <option value="b2b">B2B Commercial / MSA / SaaS Agreement</option>
+            <option value="eula">Consumer EULA / Terms of Service</option>
+            <option value="sow">Statement of Work (SOW) Roadmap</option>
+          </select>
+        </div>
+        <textarea id="paste-textarea" class="textarea-custom" placeholder="Paste your contract clauses or full agreement text here..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="closePasteModal()">Cancel</button>
+        <button class="btn-action btn-primary" id="btn-analyze-paste" onclick="submitPastedContract()">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Pasted Contract
         </button>
       </div>
-    </footer>
-
+    </div>
   </div>
 
-  <!-- DRAWER: COUNTERPARTY NEGOTIATION SIMULATOR -->
-  <aside class="negotiation-drawer" id="sim-drawer">
-    <div class="drawer-header">
+  <!-- Negotiation Simulator Slide-Out Drawer -->
+  <div class="chat-drawer" id="simulator-drawer">
+    <div class="chat-drawer-header">
       <div>
-        <h3><i class="fa-solid fa-comments-dollar g-blue"></i> Counterparty Negotiation Simulator</h3>
-        <span class="drawer-sub">Simulate negotiation responses with Provider / Vendor AI</span>
+        <h4 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-handshake g-blue"></i> Counterparty Simulator</h4>
+        <span style="font-size: 11px; color: var(--g-gray-500);">Simulating pushback & concessions</span>
       </div>
-      <button class="btn btn-icon-sm" onclick="closeSimulateDrawer()"><i class="fa-solid fa-xmark"></i></button>
+      <button class="btn-action" onclick="closeSimulatorDrawer()" style="border:none; padding:4px 8px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
-
-    <div class="sim-status-bar">
-      <span class="sim-status-chip" id="sim-status-indicator">🟡 Compromise Available</span>
-      <span class="sub-text">Negotiation leverage: 72%</span>
-    </div>
-
-    <div class="sim-chat-body" id="sim-chat-body">
-      <!-- Chat history -->
-    </div>
-
-    <div class="sim-next-move-box" id="sim-next-move-box">
-      <strong>Recommended Next Move:</strong>
-      <p id="sim-next-move-text">Offer a 1x annual fee cap for ordinary claims ($150k) and a 3x super-cap ($450k) for confidentiality.</p>
-    </div>
-
-    <div class="sim-input-bar">
-      <input type="text" id="sim-user-input" placeholder="Type proposed compromise or response..." onkeydown="if(event.key==='Enter') sendSimMessage()">
-      <button class="btn btn-primary" onclick="sendSimMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-  </aside>
-
-  <!-- MODAL: MAKE THIS FAIR (8-Point Balance Evaluation) -->
-  <div class="modal-overlay hidden" id="modal-make-fair">
-    <div class="modal-box modal-lg">
-      <div class="modal-header">
-        <div>
-          <h2><i class="fa-solid fa-scale-unbalanced-flip g-blue"></i> Make This Fair: 8-Point Balance Evaluation</h2>
-          <p class="modal-sub">Gemini balance evaluation & recommended win-win compromise</p>
-        </div>
-        <button class="btn btn-icon-sm" onclick="closeMakeFairModal()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body" id="make-fair-body">
-        <!-- Dynamic questions -->
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeMakeFairModal()">Close</button>
-        <button class="btn btn-primary" onclick="copySuggestedCompromise()">
-          <i class="fa-solid fa-copy"></i> Copy Suggested Response
-        </button>
+    <div class="chat-messages" id="sim-chat-messages">
+      <div class="chat-bubble counterparty">
+        Hello! I am the automated Counterparty Legal & Procurement agent. Propose any contract changes or redlines, and I will evaluate concessions.
       </div>
     </div>
-  </div>
-
-  <!-- MODAL: CLAUSE COMPARISON (DIFF VIEW) -->
-  <div class="modal-overlay hidden" id="modal-diff">
-    <div class="modal-box modal-lg">
-      <div class="modal-header">
-        <div>
-          <h2><i class="fa-solid fa-code-compare g-blue"></i> Proposed Clause Redline & Compromise</h2>
-          <p class="modal-sub">Compare current contract language against proposed balanced language</p>
-        </div>
-        <button class="btn btn-icon-sm" onclick="closeDiffModal()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="diff-container">
-          <div class="diff-box diff-original">
-            <span class="diff-label danger-text"><i class="fa-solid fa-minus-circle"></i> Current Clause Text</span>
-            <div id="diff-original-text" class="diff-text"></div>
-          </div>
-
-          <div class="diff-box diff-proposed">
-            <span class="diff-label success-text"><i class="fa-solid fa-plus-circle"></i> Proposed Balanced Text</span>
-            <div id="diff-proposed-text" class="diff-text"></div>
-          </div>
-        </div>
-
-        <div class="diff-explanation-box">
-          <strong>Gemini AI Rationale:</strong>
-          <p id="diff-explanation-text"></p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeDiffModal()">Close</button>
-        <button class="btn btn-primary" onclick="openSimulateDrawer()">
-          <i class="fa-solid fa-comments"></i> Test in Negotiation Simulator
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: NEXT CHALLENGE PRIORITIZATION -->
-  <div class="modal-overlay hidden" id="modal-next-challenge">
-    <div class="modal-box">
-      <div class="modal-header">
-        <div>
-          <h2><i class="fa-solid fa-bolt-lightning g-yellow"></i> What Should I Challenge Next?</h2>
-          <p class="modal-sub">Prioritized by Severity × Financial Exposure × Negotiation Leverage</p>
-        </div>
-        <button class="btn btn-icon-sm" onclick="closeNextChallengeModal()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body" id="next-challenge-body">
-        <!-- Dynamic challenge -->
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeNextChallengeModal()">Close</button>
-        <button class="btn btn-primary" onclick="executeChallengeFromModal()">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Challenge This Provision
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: PASTE CONTRACT -->
-  <div class="modal-overlay hidden" id="modal-paste">
-    <div class="modal-box modal-lg">
-      <div class="modal-header">
-        <div>
-          <h2><i class="fa-solid fa-paste g-blue"></i> Paste Contract Text</h2>
-          <p class="modal-sub">Paste custom contract, terms of service, or EULA text for instant analysis</p>
-        </div>
-        <button class="btn btn-icon-sm" onclick="closePasteModal()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body">
-        <textarea id="paste-text-area" class="form-textarea" placeholder="Paste full contract or terms text here..."></textarea>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closePasteModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitPastedContract()">
-          <i class="fa-solid fa-magnifying-glass"></i> Analyze Pasted Contract
-        </button>
-      </div>
+    <div class="chat-input-bar">
+      <input type="text" id="sim-chat-input" placeholder="Type proposal, e.g., 'Make liability mutual'..." onkeydown="if(event.key==='Enter') sendSimMessage()">
+      <button class="btn-action btn-primary" onclick="sendSimMessage()">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
     </div>
   </div>
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
+
+  <!-- Footer -->
+  <footer style="max-width: 1400px; margin: 40px auto 20px; padding: 0 24px; text-align: center; font-size: 12px; color: var(--g-gray-500);">
+    <p id="footer-tagline">Find the agreement both sides can live with.</p>
+    <p style="margin-top: 4px;">Contract Risk Agent · Built with Google Material Design 3 & FastAPI</p>
+  </footer>
 
   <script src="/static/app.js"></script>
 </body>
